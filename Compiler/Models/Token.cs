@@ -17,12 +17,17 @@ namespace Compiler.Models
         {
         }
 
+        public override string ToString()
+        {
+            return $"{this.Lexeme:20} {this.Type}";
+        }
+
         public static Token CreateToken(string lexeme)
         {
             TokenType type = TokenType.Unknown;
             var intRegex = @"[+|-]?[\d]+";
             var realRegex = @"[+|-]?[\d]*(.)[\d]+";
-            var identifierRegex = @"[a-zA-Z][\w]{0, 30}";
+            var identifierRegex = @"[a-zA-Z][\w]{0,30}";
             var booleanRegex = @"(true|false)";
             var stringRegex = @"""[.]*""";
 

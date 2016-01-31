@@ -57,6 +57,7 @@ namespace Compiler.Services
             }
 
             this.SourceCodeReader = new StreamReader(sourceCodeFilePath);
+            this.LineNumber = 1;
         }
 
         public Token GetNextToken()
@@ -121,7 +122,7 @@ namespace Compiler.Services
                 case '|': lexeme.Append(ExtractOperator(currentChar)); break;
                 case '"': lexeme.Append(ExtractLiteralString()); break;
                 default:
-                    if (char.IsLetterOrDigit(this.PeekNext))
+                    if (char.IsLetterOrDigit(currentChar))
                     {
                         lexeme.Append(ExtractString(currentChar));
                     }
@@ -166,7 +167,7 @@ namespace Compiler.Services
                 {
                     literalString.Append(currentChar);
 
-                    if (!char.IsLetterOrDigit(this.PeekNext) || this.PeekNext != '_')
+                    if (!char.IsLetterOrDigit(this.PeekNext) && this.PeekNext != '_')
                     {
                         break;
                     }
