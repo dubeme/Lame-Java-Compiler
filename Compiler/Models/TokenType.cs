@@ -235,7 +235,7 @@ namespace Compiler.Models
         [TokenTypeMetadata(Lexeme = "(", BaseTokenGroup = TokenGroup.SpecialCharacter)]
         OpenParen,
 
-        [TokenTypeMetadata(Lexeme = "]", BaseTokenGroup = TokenGroup.SpecialCharacter)]
+        [TokenTypeMetadata(Lexeme = "[", BaseTokenGroup = TokenGroup.SpecialCharacter)]
         OpenSquareBracket,
 
         [TokenTypeMetadata(Lexeme = "package", BaseTokenGroup = TokenGroup.ReservedWord)]
