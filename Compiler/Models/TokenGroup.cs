@@ -13,6 +13,8 @@ namespace Compiler.Models
         Identifier,
         Number,
         Literal,
-        Relational
+        Relational,
+        Operator,
+        SpecialCharacter
     }
 }
