@@ -5,16 +5,37 @@ using System.Text;
 
 namespace Compiler.Services
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class LexicalAnalyzerService
     {
+        /// <summary>
+        /// The EOF
+        /// </summary>
         private const char EOF = char.MaxValue;
+        /// <summary>
+        /// The eol
+        /// </summary>
         private const char EOL = '\n';
 
+        /// <summary>
+        /// Gets or sets the source code reader of this LexicalAnalyzerService.
+        /// </summary>
         public StreamReader SourceCodeReader { get; set; }
 
+        /// <summary>
+        /// The _ known token types
+        /// </summary>
         private static KnownTokenTypes _KnownTokenTypes = KnownTokenTypes.Instance;
+        /// <summary>
+        /// The line number
+        /// </summary>
         private int LineNumber = 0;
 
+        /// <summary>
+        /// Gets the next character.
+        /// </summary>
         private char NextChar
         {
             get
@@ -36,6 +57,9 @@ namespace Compiler.Services
             }
         }
 
+        /// <summary>
+        /// Gets the peek next.
+        /// </summary>
         private char PeekNext
         {
             get
@@ -49,6 +73,10 @@ namespace Compiler.Services
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LexicalAnalyzerService"/> class.
+        /// </summary>
+        /// <param name="sourceCodeFilePath">The source code file path.</param>
         public LexicalAnalyzerService(string sourceCodeFilePath)
         {
             if (string.IsNullOrWhiteSpace(sourceCodeFilePath))
@@ -60,13 +88,18 @@ namespace Compiler.Services
             this.LineNumber = 1;
         }
 
+        /// <summary>
+        /// Gets the next token.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="System.Exception">${LineNumber} {ex.Message}</exception>
         public Token GetNextToken()
         {
             try
             {
                 if (this.PeekNext != EOF)
                 {
-                    return Token.CreateToken(NextLexeme());
+                    return Token.CreateToken(NextLexeme(), LineNumber);
                 }
             }
             catch (Exception ex)
@@ -77,6 +110,11 @@ namespace Compiler.Services
             return null;
         }
 
+        /// <summary>
+        /// Nexts the lexeme.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="System.Exception">${currentChar} is not a recognized symbol</exception>
         private string NextLexeme()
         {
             var currentChar = this.NextChar;
@@ -137,6 +175,11 @@ namespace Compiler.Services
             return lexeme.ToString();
         }
 
+        /// <summary>
+        /// Extracts the string.
+        /// </summary>
+        /// <param name="currentChar">The current character.</param>
+        /// <returns></returns>
         private string ExtractString(char currentChar)
         {
             var literalString = new StringBuilder();
@@ -179,6 +222,11 @@ namespace Compiler.Services
             return literalString.ToString();
         }
 
+        /// <summary>
+        /// Extracts the literal string.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="System.Exception">Invalid string literal, EOF reached before closing \</exception>
         private string ExtractLiteralString()
         {
             var literalString = new StringBuilder();
@@ -201,6 +249,11 @@ namespace Compiler.Services
             throw new Exception("Invalid string literal, EOF reached before closing \"");
         }
 
+        /// <summary>
+        /// Extracts the operator.
+        /// </summary>
+        /// <param name="operatorChar">The operator character.</param>
+        /// <returns></returns>
         private string ExtractOperator(char operatorChar)
         {
             var lexeme = new StringBuilder();

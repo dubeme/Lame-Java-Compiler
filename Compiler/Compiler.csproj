@@ -44,9 +44,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Class1.cs" />
+    <Compile Include="Helpers\AttributeHelper.cs" />
     <Compile Include="Models\KnownTokenTypes.cs" />
     <Compile Include="Models\Token.cs" />
     <Compile Include="Models\TokenGroup.cs" />
+    <Compile Include="Models\Attributes\TokenGroupAttribute.cs" />
+    <Compile Include="Models\Attributes\TokenTypeMetadataAttribute.cs" />
     <Compile Include="Models\Tokens.cs" />
     <Compile Include="Models\TokenType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
