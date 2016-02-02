@@ -6,9 +6,15 @@ namespace Compiler
 {
     internal class Program
     {
-        public static void Main()
+        public static void Main(string[] args)
         {
-            var lexAnalyzer = new LexicalAnalyzerService("test.txt");
+            if (args.Length != 1)
+            {
+                Console.WriteLine("Invalid usage - Usage EXECUTABLE JAVA_FILE");
+                return;
+            }
+
+            var lexAnalyzer = new LexicalAnalyzerService(args[0]);
             var count = 1l;
             var maxCount = 20;
 
@@ -19,11 +25,6 @@ namespace Compiler
                 try
                 {
                     var token = lexAnalyzer.GetNextToken();
-
-                    if (token == null)
-                    {
-                        break;
-                    }
 
                     if (count % maxCount == 0)
                     {
@@ -44,6 +45,11 @@ namespace Compiler
                     }
                     
                     count++;
+
+                    if (token.Type == TokenType.EndOfFile)
+                    {
+                        break;
+                    }
                 }
                 catch (Exception ex)
                 {
