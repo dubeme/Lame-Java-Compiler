@@ -15,6 +15,6 @@ namespace Compiler.Models
         Literal,
         Relational,
         Operator,
-        SpecialCharacter
+        SpecialCharacter,
     }
 }
