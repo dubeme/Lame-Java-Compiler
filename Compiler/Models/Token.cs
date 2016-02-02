@@ -108,11 +108,11 @@ namespace Compiler.Models
                     valueR = this.Lexeme;
                 }
 
-                return string.Format(formatString, this.LineNumber, this.Lexeme, this.Type, value, valueR);
+                return string.Format(formatString, this.LineNumber, Contain(this.Lexeme, 30), this.Type, value, valueR);
             }
         }
 
-        private string contain(string str, int max)
+        private static string Contain(string str, int max)
         {
             if (string.IsNullOrEmpty(str))
             {
@@ -125,9 +125,9 @@ namespace Compiler.Models
             }
 
             var join = "...";
-            var len = str.Length / 2 + (str.Length % 2 == 0 ? 0 : 1);
+            var len = max % 2 == 0 ? max / 2 : max / 2 + 1;
 
-            return $"{str.Substring(0, len - 2)}{join}{str.Substring(len + 1)}";
+            return $"{str.Substring(0, len - 2)}{join}{str.Substring(str.Length - len + 1)}";
         }
 
         public static Token CreateErrorToken(int lineNumber, string errMessage)
