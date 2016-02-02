@@ -6,7 +6,7 @@ using System.Text;
 namespace Compiler.Services
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public class LexicalAnalyzerService
     {
@@ -14,6 +14,7 @@ namespace Compiler.Services
         /// The EOF
         /// </summary>
         private const char EOF = char.MaxValue;
+
         /// <summary>
         /// The eol
         /// </summary>
@@ -28,6 +29,7 @@ namespace Compiler.Services
         /// The _ known token types
         /// </summary>
         private static KnownTokenTypes _KnownTokenTypes = KnownTokenTypes.Instance;
+
         /// <summary>
         /// The line number
         /// </summary>
@@ -73,6 +75,8 @@ namespace Compiler.Services
             }
         }
 
+        public bool EOFReached { get; private set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="LexicalAnalyzerService"/> class.
         /// </summary>
@@ -99,12 +103,18 @@ namespace Compiler.Services
             {
                 if (this.PeekNext != EOF)
                 {
-                    return Token.CreateToken(NextLexeme(), LineNumber);
+                    var lexeme = NextLexeme();
+
+                    if (EOFReached)
+                    {
+                        return Token.CreateEOFToken(LineNumber);
+                    }
+                    return Token.CreateToken(lexeme, LineNumber);
                 }
             }
             catch (Exception ex)
             {
-                throw new Exception($"{LineNumber} {ex.Message}"); ;
+                return Token.CreateErrorToken(LineNumber, ex.Message);
             }
 
             return null;
@@ -118,7 +128,7 @@ namespace Compiler.Services
         private string NextLexeme()
         {
             var currentChar = this.NextChar;
-            var lexeme = new StringBuilder();
+            var lexeme = string.Empty;
 
             // Skip all white spaces
             while (currentChar != EOF && char.IsWhiteSpace(currentChar))
@@ -129,6 +139,7 @@ namespace Compiler.Services
             // When end of file
             if (currentChar == EOF)
             {
+                this.EOFReached = true;
                 return string.Empty;
             }
 
@@ -145,7 +156,7 @@ namespace Compiler.Services
                 case ']':
                 case '{':
                 case '}':
-                case '~': lexeme.Append(currentChar); break;
+                case '~': lexeme = $"{currentChar}"; break;
                 case '!':
                 case '%':
                 case '&':
@@ -157,12 +168,12 @@ namespace Compiler.Services
                 case '=':
                 case '>':
                 case '^':
-                case '|': lexeme.Append(ExtractOperator(currentChar)); break;
-                case '"': lexeme.Append(ExtractLiteralString()); break;
+                case '|': lexeme = ExtractOperator(currentChar); break;
+                case '"': lexeme = ExtractLiteralString(); break;
                 default:
                     if (char.IsLetterOrDigit(currentChar))
                     {
-                        lexeme.Append(ExtractString(currentChar));
+                        lexeme = ExtractString(currentChar);
                     }
                     else
                     {
@@ -172,7 +183,7 @@ namespace Compiler.Services
                     break;
             }
 
-            return lexeme.ToString();
+            return lexeme;
         }
 
         /// <summary>
@@ -242,11 +253,16 @@ namespace Compiler.Services
 
                 if (currentChar == '"' && previousChar != '\\')
                 {
-                    return literalString.ToString();
+                    return $"\"{literalString.ToString()}\"";
                 }
             }
 
             throw new Exception("Invalid string literal, EOF reached before closing \"");
+        }
+
+        private string ExtractLiteralChar()
+        {
+            return string.Empty;
         }
 
         /// <summary>

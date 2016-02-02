@@ -271,6 +271,9 @@ namespace Compiler.Models
         [TokenTypeMetadata(Lexeme = "short", BaseTokenGroup = TokenGroup.ReservedWord)]
         Short,
 
+        [TokenTypeMetadata(Lexeme = "'", BaseTokenGroup = TokenGroup.SpecialCharacter)]
+        SingleQuote,
+
         [TokenTypeMetadata(Lexeme = "static", BaseTokenGroup = TokenGroup.ReservedWord)]
         Static,
 
@@ -332,5 +335,8 @@ namespace Compiler.Models
 
         [TokenTypeMetadata(Lexeme = "String", BaseTokenGroup = TokenGroup.ReservedWord)]
         String,
+
+        [TokenTypeMetadata(Lexeme = "", BaseTokenGroup = TokenGroup.Unknown)]
+        EndOfFile,
     }
 }

@@ -15,16 +15,26 @@ namespace Compiler
         {
             var lexAnalyzer = new LexicalAnalyzerService("test.txt");
 
+            Console.WriteLine(Token.PRINT_HEADER);
+
             while (true)
             {
-                var token = lexAnalyzer.GetNextToken();
-
-                if (token == null)
+                try
                 {
-                    break;
-                }
 
-                Console.WriteLine(token);
+                    var token = lexAnalyzer.GetNextToken();
+
+                    if (token == null)
+                    {
+                        break;
+                    }
+
+                    Console.WriteLine(token);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             }
         }
     }
