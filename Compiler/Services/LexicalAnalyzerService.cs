@@ -148,7 +148,6 @@ namespace Compiler.Services
                 case '(':
                 case ')':
                 case ',':
-                case '.':
                 case ':':
                 case ';':
                 case '?':
@@ -170,8 +169,13 @@ namespace Compiler.Services
                 case '^':
                 case '|': lexeme = ExtractOperator(currentChar); break;
                 case '"': lexeme = ExtractLiteralString(); break;
+                case '.':
                 default:
-                    if (char.IsLetterOrDigit(currentChar))
+                    if (currentChar == '.' && !char.IsDigit(this.PeekNext))
+                    {
+                        lexeme = $"{currentChar}";
+                    }
+                    else if (currentChar == '.' || char.IsLetterOrDigit(currentChar))
                     {
                         lexeme = ExtractString(currentChar);
                     }
@@ -196,17 +200,19 @@ namespace Compiler.Services
             var literalString = new StringBuilder();
             var previousChar = currentChar;
 
-            var hasDot = false;
+            var containsDecimalPoint = currentChar == '.';
+            var canAcceptDecimalPoint = true;
 
-            if (char.IsDigit(currentChar))
+            if (char.IsDigit(currentChar) || currentChar == '.')
             {
                 // Number mode
                 do
                 {
                     literalString.Append(currentChar);
-                    hasDot = hasDot || currentChar == '.';
+                    containsDecimalPoint = containsDecimalPoint || currentChar == '.';
+                    canAcceptDecimalPoint = this.PeekNext == '.' && !containsDecimalPoint;
 
-                    if (!char.IsDigit(this.PeekNext) || (hasDot && this.PeekNext == '.'))
+                    if (!char.IsDigit(this.PeekNext) && !canAcceptDecimalPoint)
                     {
                         break;
                     }
