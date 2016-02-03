@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Compiler.Services
 {
@@ -229,7 +230,11 @@ namespace Compiler.Services
 
                     if (!char.IsLetterOrDigit(this.PeekNext) && this.PeekNext != '_')
                     {
-                        break;
+                        // TODO: Remove later, these are here for the course duration
+                        if (!(Regex.IsMatch(literalString.ToString(), "(System|System.out)") && this.PeekNext == '.'))
+                        {
+                            break;
+                        }
                     }
 
                     currentChar = this.NextChar;
