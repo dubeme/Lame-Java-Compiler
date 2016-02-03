@@ -160,7 +160,7 @@ namespace Compiler.Models
             TokenType type = TokenType.Unknown;
             var intRegex = @"^[+|-]?[\d]+$";
             var realRegex = @"^[+|-]?[\d]*(.)[\d]+$";
-            var identifierRegex = @"^[a-zA-Z][\w]{0,30}$";
+            var identifierRegex = @"^[a-zA-Z][\w]{0,}$";
             var booleanRegex = @"^(true|false)$";
             var stringRegex = @"^""(.)*""$";
 
@@ -178,6 +178,13 @@ namespace Compiler.Models
             }
             else if (Regex.IsMatch(lexeme, identifierRegex))
             {
+                // TODO: Restrain identifier length
+                int MAX_LENGTH = 31;
+                if (lexeme.Length > MAX_LENGTH)
+                {
+                    throw new Exception($"Identifier {{{lexeme}}}, excedds max length of {MAX_LENGTH}");
+                }
+
                 type = TokenType.Identifier;
             }
             else if (Regex.IsMatch(lexeme, booleanRegex))
