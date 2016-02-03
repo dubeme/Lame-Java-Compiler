@@ -322,7 +322,7 @@ namespace Compiler.Models
         [TokenTypeMetadata(Lexeme = "while", BaseTokenGroup = TokenGroup.ReservedWord)]
         While,
 
-        // Remove later, these are here for the course duration
+        //TODO: Remove later, these are here for the course duration
 
         [TokenTypeMetadata(Lexeme = "main", BaseTokenGroup = TokenGroup.ReservedWord)]
         Main,

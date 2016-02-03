@@ -13,10 +13,6 @@ namespace Compiler.Models.Attributes
         public TokenGroupAttribute(TokenGroup tokenGroup)
         {
             this.tokenGroup = tokenGroup;
-
-            // TODO: Implement code here
-
-            throw new NotImplementedException();
         }
 
         public TokenGroup TokenGroup
