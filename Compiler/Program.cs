@@ -1,6 +1,7 @@
 ﻿using Compiler.Models;
 using Compiler.Services;
 using System;
+using System.IO;
 
 namespace Compiler
 {
@@ -8,64 +9,79 @@ namespace Compiler
     {
         public static void Main(string[] args)
         {
+            var normalColor = Console.ForegroundColor;
+            var errorColor = ConsoleColor.Red;
+            var infoColor = ConsoleColor.Yellow;
+
             if (args.Length != 1)
             {
                 Console.WriteLine("Invalid usage - Usage EXECUTABLE JAVA_FILE");
                 return;
             }
 
-            var lexAnalyzer = new LexicalAnalyzerService(args[0]);
-            var count = 1L;
-            var maxCount = 20;
-
-            Console.WriteLine(Token.PRINT_HEADER);
-
-            while (true)
+            try
             {
-                try
+                var streamReader = new StreamReader(args[0] + "");
+                var lexAnalyzer = new LexicalAnalyzerService(streamReader);
+                var count = 1L;
+                var maxCount = 20;
+
+                Console.WriteLine(Token.PRINT_HEADER);
+
+                while (true)
                 {
-                    var token = lexAnalyzer.GetNextToken();
+                    try
+                    {
+                        var token = lexAnalyzer.GetNextToken();
 
-                    if (count % maxCount == 0)
-                    {
-                        Console.WriteLine($"\nPage #{count / maxCount}\nPlease press enter to continue ... ");
-                        Console.ReadLine();
-                    }
+                        if (count % maxCount == 0)
+                        {
+                            Console.WriteLine($"\nPage #{count / maxCount}\nPlease press enter to continue ... ");
+                            Console.ReadLine();
+                        }
 
-                    if (token.HasError)
-                    {
-                        var cc = Console.ForegroundColor;
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine(token);
-                        Console.ForegroundColor = cc;
-                    }
-                    else if (token.Type == TokenType.Unknown)
-                    {
-                        var cc = Console.ForegroundColor;
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.WriteLine(token);
-                        Console.ForegroundColor = cc;
-                    }
-                    else
-                    {
-                        Console.WriteLine(token);
-                    }
-                    
-                    count++;
+                        if (token.HasError)
+                        {
+                            Print(token, errorColor);
+                        }
+                        else if (token.Type == TokenType.Unknown)
+                        {
+                            Print(token, infoColor);
+                        }
+                        else
+                        {
+                            Print(token, normalColor);
+                        }
 
-                    if (token.Type == TokenType.EndOfFile)
+                        count++;
+
+                        if (token.Type == TokenType.EndOfFile)
+                        {
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
                     {
-                        break;
+                        Console.WriteLine(ex.Message);
                     }
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
+            }
+            catch (Exception ex)
+            {
+                Print("Oops, there seems to be something wrong.\n\n", errorColor);
+                Print(ex.Message, errorColor);
             }
 
             Console.WriteLine($"\n\nAll done.\nPlease press enter to continue ... ");
             Console.ReadLine();
+        }
+
+        private static void Print(object obj, ConsoleColor color)
+        {
+            var cc = Console.ForegroundColor;
+            Console.ForegroundColor = color;
+            Console.WriteLine(obj);
+            Console.ForegroundColor = cc;
         }
     }
 }
