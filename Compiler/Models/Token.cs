@@ -101,7 +101,7 @@ namespace Compiler.Models
 
                 if (this.Type == TokenType.LiteralInteger)
                 {
-                    valueR = this.Lexeme;
+                    value = this.Lexeme;
                 }
                 else if (this.Type == TokenType.LiteralReal)
                 {
