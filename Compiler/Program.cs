@@ -15,7 +15,7 @@ namespace Compiler
             }
 
             var lexAnalyzer = new LexicalAnalyzerService(args[0]);
-            var count = 1l;
+            var count = 1L;
             var maxCount = 20;
 
             Console.WriteLine(Token.PRINT_HEADER);
