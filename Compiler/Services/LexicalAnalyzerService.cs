@@ -24,7 +24,7 @@ namespace Compiler.Services
         /// <summary>
         /// Gets or sets the source code reader of this LexicalAnalyzerService.
         /// </summary>
-        public StreamReader SourceCodeReader { get; set; }
+        public StreamReader SourceCodeStream { get; set; }
 
         /// <summary>
         /// The _ known token types
@@ -43,20 +43,20 @@ namespace Compiler.Services
         {
             get
             {
-                if (this.SourceCodeReader.EndOfStream)
+                if (this.SourceCodeStream.EndOfStream)
                 {
                     return EOF;
                 }
 
-                if ((char)this.SourceCodeReader.Peek() == '\r')
+                if ((char)this.SourceCodeStream.Peek() == '\r')
                 {
                     // Ignore \r
                     // The assumption is that the next character is \n
-                    this.SourceCodeReader.Read();
+                    this.SourceCodeStream.Read();
                     this.LineNumber++;
                 }
 
-                return (char)this.SourceCodeReader.Read();
+                return (char)this.SourceCodeStream.Read();
             }
         }
 
@@ -67,50 +67,54 @@ namespace Compiler.Services
         {
             get
             {
-                if (this.SourceCodeReader.EndOfStream)
+                if (this.SourceCodeStream.EndOfStream)
                 {
                     return EOF;
                 }
 
-                return (char)this.SourceCodeReader.Peek();
+                return (char)this.SourceCodeStream.Peek();
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether [EOF reached].
+        /// </summary>
         public bool EOFReached { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LexicalAnalyzerService"/> class.
         /// </summary>
-        /// <param name="sourceCodeFilePath">The source code file path.</param>
-        public LexicalAnalyzerService(string sourceCodeFilePath)
+        /// <param name="sourceFile">The source file.</param>
+        public LexicalAnalyzerService(StreamReader sourceFile)
         {
-            if (string.IsNullOrWhiteSpace(sourceCodeFilePath))
-            {
-                return;
-            }
-
-            this.SourceCodeReader = new StreamReader(sourceCodeFilePath);
-            this.LineNumber = 1;
+            this.SourceCodeStream = sourceFile;
         }
 
         /// <summary>
         /// Gets the next token.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>
+        /// A token if a proper lexeme is found.
+        /// Error token, if error occured while processing lexeme.
+        /// Null, if the streamreader is null
+        /// </returns>
         /// <exception cref="System.Exception">${LineNumber} {ex.Message}</exception>
         public Token GetNextToken()
         {
             try
             {
-                if (this.PeekNext != EOF)
+                if (this.SourceCodeStream != null)
                 {
-                    var lexeme = NextLexeme();
-
-                    if (EOFReached)
+                    if (this.PeekNext != EOF)
                     {
-                        return Token.CreateEOFToken(LineNumber);
+                        var lexeme = NextLexeme();
+
+                        if (EOFReached)
+                        {
+                            return Token.CreateEOFToken(LineNumber);
+                        }
+                        return Token.CreateToken(lexeme, LineNumber);
                     }
-                    return Token.CreateToken(lexeme, LineNumber);
                 }
             }
             catch (Exception ex)
@@ -271,6 +275,10 @@ namespace Compiler.Services
             throw new Exception("Invalid string literal, EOF reached before closing \"");
         }
 
+        /// <summary>
+        /// Extracts the literal character.
+        /// </summary>
+        /// <returns></returns>
         private string ExtractLiteralChar()
         {
             return string.Empty;
