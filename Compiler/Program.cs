@@ -39,6 +39,13 @@ namespace Compiler
                         Console.WriteLine(token);
                         Console.ForegroundColor = cc;
                     }
+                    else if (token.Type == TokenType.Unknown)
+                    {
+                        var cc = Console.ForegroundColor;
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine(token);
+                        Console.ForegroundColor = cc;
+                    }
                     else
                     {
                         Console.WriteLine(token);
