@@ -268,7 +268,8 @@ namespace Compiler.Services
                     if (!char.IsLetterOrDigit(this.PeekNext) && this.PeekNext != '_')
                     {
                         // TODO: Remove later, these are here for the course duration
-                        if (!(Regex.IsMatch(literalString.ToString(), "(System|System.out)") && this.PeekNext == '.'))
+                        // NOTE: This allows anything in the form System.out.*
+                        if (!(Regex.IsMatch(literalString.ToString(), "^(System|System.out)$") && this.PeekNext == '.'))
                         {
                             break;
                         }
