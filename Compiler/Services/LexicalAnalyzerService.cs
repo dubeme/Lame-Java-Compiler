@@ -27,7 +27,7 @@ namespace Compiler.Services
         /// <summary>
         /// Gets or sets the source code reader of this LexicalAnalyzerService.
         /// </summary>
-        public StreamReader SourceCodeStream { get; set; }
+        private StreamReader SourceCodeStream { get; set; }
 
         /// <summary>
         /// The _ known token types
@@ -73,7 +73,7 @@ namespace Compiler.Services
         /// <summary>
         /// Gets the next non white space character.
         /// </summary>
-        public char NextNonWhiteSpaceChar
+        private char NextNonWhiteSpaceChar
         {
             get
             {
@@ -106,14 +106,19 @@ namespace Compiler.Services
         }
 
         /// <summary>
-        /// Gets a value indicating whether [EOF reached].
+        /// Gets and Sets a value indicating whether [EOF reached].
         /// </summary>
-        public bool EOFReached { get; private set; }
+        private bool EOFReached { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether [comment found].
         /// </summary>
-        public bool CommentFound { get; set; }
+        private bool CommentFound { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [show stopping error occured].
+        /// </summary>
+        private bool ShowStoppingErrorOccured { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LexicalAnalyzerService" /> class.
@@ -137,7 +142,7 @@ namespace Compiler.Services
         {
             try
             {
-                if (this.SourceCodeStream != null)
+                if (this.SourceCodeStream != null && !this.ShowStoppingErrorOccured)
                 {
                     if (this.PeekNext != EOF)
                     {
@@ -393,14 +398,23 @@ namespace Compiler.Services
             else if (this.PeekNext == '*')
             {
                 // Extract multi line comment
-                var temp = this.NextChar;
+                var currentChar = this.NextChar;
 
                 do
                 {
-                    if (this.NextChar == '*' && this.PeekNext == '/')
+                    currentChar = this.NextChar;
+
+                    if (currentChar == '/' && this.PeekNext == '*')
+                    {
+                        // Nested comment [Not allowed]
+                        this.ShowStoppingErrorOccured = true;
+                        throw new Exception("Nested comments not allowed.");
+                    }
+
+                    if (currentChar == '*' && this.PeekNext == '/')
                     {
                         // Ending slash found
-                        temp = this.NextChar;
+                        currentChar = this.NextChar;
                         break;
                     }
 
