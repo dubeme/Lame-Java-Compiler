@@ -34,6 +34,11 @@ namespace Compiler
                     {
                         var token = lexAnalyzer.GetNextToken();
 
+                        if (token == null || token.Type == TokenType.EndOfFile)
+                        {
+                            break;
+                        }
+
                         if (count % maxCount == 0)
                         {
                             Console.WriteLine($"\nPage #{count / maxCount}\nPlease press enter to continue ... ");
@@ -54,11 +59,6 @@ namespace Compiler
                         }
 
                         count++;
-
-                        if (token.Type == TokenType.EndOfFile)
-                        {
-                            break;
-                        }
                     }
                     catch (Exception ex)
                     {
