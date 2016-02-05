@@ -34,7 +34,7 @@ namespace Compiler.Services
         /// <summary>
         /// The line number
         /// </summary>
-        private int LineNumber = 0;
+        private int LineNumber = 1;
 
         /// <summary>
         /// Gets the next character.
@@ -53,10 +53,16 @@ namespace Compiler.Services
                     // Ignore \r
                     // The assumption is that the next character is \n
                     this.SourceCodeStream.Read();
+                }
+
+                var ch = (char)this.SourceCodeStream.Read();
+
+                if (ch == EOL)
+                {
                     this.LineNumber++;
                 }
 
-                return (char)this.SourceCodeStream.Read();
+                return ch;
             }
         }
 
@@ -80,6 +86,11 @@ namespace Compiler.Services
         /// Gets a value indicating whether [EOF reached].
         /// </summary>
         public bool EOFReached { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [comment found].
+        /// </summary>
+        public bool CommentFound { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LexicalAnalyzerService"/> class.
@@ -108,6 +119,12 @@ namespace Compiler.Services
                     if (this.PeekNext != EOF)
                     {
                         var lexeme = NextLexeme();
+
+                        // Strip all the comments before the next valid token
+                        while (this.CommentFound && !this.EOFReached)
+                        {
+                            lexeme = NextLexeme();
+                        }
 
                         if (EOFReached)
                         {
@@ -147,6 +164,9 @@ namespace Compiler.Services
                 this.EOFReached = true;
                 return string.Empty;
             }
+
+            // Set that no comment is found
+            this.CommentFound = false;
 
             switch (currentChar)
             {
@@ -334,7 +354,37 @@ namespace Compiler.Services
             }
             else if (operatorChar == '/')
             {
-                // Extract comment
+                if (this.PeekNext == '/')
+                {
+                    // Extract single line comment
+                    while (this.NextChar != EOL) ;
+
+                    lexeme.Clear();
+                    this.CommentFound = true;
+                }
+                else if (this.PeekNext == '*')
+                {
+                    // Extract multi line comment
+                    var temp = this.NextChar;
+
+                    do
+                    {
+                        if (this.NextChar == '*' && this.PeekNext == '/')
+                        {
+                            // Ending slash found
+                            temp = this.NextChar;
+                            break;
+                        }
+
+                        if (this.PeekNext == EOF)
+                        {
+                            throw new Exception("EOF reached while trying to find closing tag for multiline comment.");
+                        }
+                    } while (this.PeekNext != EOF);
+
+                    lexeme.Clear();
+                    this.CommentFound = true;
+                }
             }
 
             return lexeme.ToString();
