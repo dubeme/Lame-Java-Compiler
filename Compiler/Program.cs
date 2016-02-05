@@ -34,7 +34,7 @@ namespace Compiler
                     {
                         var token = lexAnalyzer.GetNextToken();
 
-                        if (token == null || token.Type == TokenType.EndOfFile)
+                        if (token == null)
                         {
                             break;
                         }
@@ -59,6 +59,11 @@ namespace Compiler
                         }
 
                         count++;
+
+                        if (token.Type == TokenType.EndOfFile)
+                        {
+                            break;
+                        }
                     }
                     catch (Exception ex)
                     {

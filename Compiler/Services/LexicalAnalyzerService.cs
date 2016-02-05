@@ -4,10 +4,13 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
+/// <summary>
+///
+/// </summary>
 namespace Compiler.Services
 {
     /// <summary>
-    ///
+    /// 
     /// </summary>
     public class LexicalAnalyzerService
     {
@@ -45,6 +48,7 @@ namespace Compiler.Services
             {
                 if (this.SourceCodeStream.EndOfStream)
                 {
+                    this.EOFReached = true;
                     return EOF;
                 }
 
@@ -63,6 +67,25 @@ namespace Compiler.Services
                 }
 
                 return ch;
+            }
+        }
+
+        /// <summary>
+        /// Gets the next non white space character.
+        /// </summary>
+        public char NextNonWhiteSpaceChar
+        {
+            get
+            {
+                var currentChar = this.NextChar;
+
+                // Skip all white spaces
+                while (currentChar != EOF && char.IsWhiteSpace(currentChar))
+                {
+                    currentChar = this.NextChar;
+                }
+
+                return currentChar;
             }
         }
 
@@ -93,7 +116,7 @@ namespace Compiler.Services
         public bool CommentFound { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LexicalAnalyzerService"/> class.
+        /// Initializes a new instance of the <see cref="LexicalAnalyzerService" /> class.
         /// </summary>
         /// <param name="sourceFile">The source file.</param>
         public LexicalAnalyzerService(StreamReader sourceFile)
@@ -120,12 +143,6 @@ namespace Compiler.Services
                     {
                         var lexeme = NextLexeme();
 
-                        // Strip all the comments before the next valid token
-                        while (this.CommentFound && !this.EOFReached)
-                        {
-                            lexeme = NextLexeme();
-                        }
-
                         if (EOFReached)
                         {
                             return Token.CreateEOFToken(LineNumber);
@@ -149,68 +166,64 @@ namespace Compiler.Services
         /// <exception cref="System.Exception">${currentChar} is not a recognized symbol</exception>
         private string NextLexeme()
         {
-            var currentChar = this.NextChar;
             var lexeme = string.Empty;
 
-            // Skip all white spaces
-            while (currentChar != EOF && char.IsWhiteSpace(currentChar))
+            do
             {
-                currentChar = this.NextChar;
-            }
+                var currentChar = this.NextNonWhiteSpaceChar;
 
-            // When end of file
-            if (currentChar == EOF)
-            {
-                this.EOFReached = true;
-                return string.Empty;
-            }
+                // When end of file
+                if (this.EOFReached)
+                {
+                    return lexeme;
+                }
 
-            // Set that no comment is found
-            this.CommentFound = false;
+                // Set that no comment is found
+                this.CommentFound = false;
 
-            switch (currentChar)
-            {
-                case '(':
-                case ')':
-                case ',':
-                case ':':
-                case ';':
-                case '?':
-                case '[':
-                case ']':
-                case '{':
-                case '}':
-                case '~': lexeme = $"{currentChar}"; break;
-                case '!':
-                case '%':
-                case '&':
-                case '*':
-                case '+':
-                case '-':
-                case '/':
-                case '<':
-                case '=':
-                case '>':
-                case '^':
-                case '|': lexeme = ExtractOperator(currentChar); break;
-                case '"': lexeme = ExtractLiteralString(); break;
-                case '.':
-                default:
-                    if (currentChar == '.' && !char.IsDigit(this.PeekNext))
-                    {
-                        lexeme = $"{currentChar}";
-                    }
-                    else if (currentChar == '.' || char.IsLetterOrDigit(currentChar))
-                    {
-                        lexeme = ExtractString(currentChar);
-                    }
-                    else
-                    {
-                        throw new Exception($"{currentChar} is not a recognized symbol");
-                    }
-
-                    break;
-            }
+                switch (currentChar)
+                {
+                    case '(':
+                    case ')':
+                    case ',':
+                    case ':':
+                    case ';':
+                    case '?':
+                    case '[':
+                    case ']':
+                    case '{':
+                    case '}':
+                    case '~': lexeme = $"{currentChar}"; break;
+                    case '!':
+                    case '%':
+                    case '&':
+                    case '*':
+                    case '+':
+                    case '-':
+                    case '/':
+                    case '<':
+                    case '=':
+                    case '>':
+                    case '^':
+                    case '|': lexeme = ExtractOperator(currentChar); break;
+                    case '"': lexeme = ExtractLiteralString(); break;
+                    case '.':
+                    default:
+                        if (currentChar == '.' && !char.IsDigit(this.PeekNext))
+                        {
+                            lexeme = $"{currentChar}"; break;
+                        }
+                        else if (currentChar == '.' || char.IsLetterOrDigit(currentChar))
+                        {
+                            lexeme = ExtractString(currentChar); break;
+                        }
+                        else
+                        {
+                            throw new Exception($"{currentChar} is not a recognized symbol");
+                        }
+                }
+                // Ignore all the comments before the next valid token
+            } while (this.CommentFound && !this.EOFReached);
 
             return lexeme;
         }
@@ -309,6 +322,7 @@ namespace Compiler.Services
         /// </summary>
         /// <param name="operatorChar">The operator character.</param>
         /// <returns></returns>
+        /// <exception cref="System.Exception">EOF reached while trying to find closing tag for multiline comment.</exception>
         private string ExtractOperator(char operatorChar)
         {
             var lexeme = new StringBuilder();
@@ -354,40 +368,50 @@ namespace Compiler.Services
             }
             else if (operatorChar == '/')
             {
-                if (this.PeekNext == '/')
-                {
-                    // Extract single line comment
-                    while (this.NextChar != EOL) ;
-
-                    lexeme.Clear();
-                    this.CommentFound = true;
-                }
-                else if (this.PeekNext == '*')
-                {
-                    // Extract multi line comment
-                    var temp = this.NextChar;
-
-                    do
-                    {
-                        if (this.NextChar == '*' && this.PeekNext == '/')
-                        {
-                            // Ending slash found
-                            temp = this.NextChar;
-                            break;
-                        }
-
-                        if (this.PeekNext == EOF)
-                        {
-                            throw new Exception("EOF reached while trying to find closing tag for multiline comment.");
-                        }
-                    } while (this.PeekNext != EOF);
-
-                    lexeme.Clear();
-                    this.CommentFound = true;
-                }
+                ExtractComment(lexeme);
             }
 
             return lexeme.ToString();
+        }
+
+        /// <summary>
+        /// Extracts the comment.
+        /// </summary>
+        /// <param name="lexeme">The lexeme.</param>
+        /// <exception cref="System.Exception">EOF reached while trying to find closing tag for multiline comment.</exception>
+        private void ExtractComment(StringBuilder lexeme)
+        {
+            if (this.PeekNext == '/')
+            {
+                // Extract single line comment
+                while (this.NextChar != EOL) ;
+
+                lexeme.Clear();
+                this.CommentFound = true;
+            }
+            else if (this.PeekNext == '*')
+            {
+                // Extract multi line comment
+                var temp = this.NextChar;
+
+                do
+                {
+                    if (this.NextChar == '*' && this.PeekNext == '/')
+                    {
+                        // Ending slash found
+                        temp = this.NextChar;
+                        break;
+                    }
+
+                    if (this.PeekNext == EOF)
+                    {
+                        throw new Exception("EOF reached while trying to find closing tag for multiline comment.");
+                    }
+                } while (this.PeekNext != EOF);
+
+                lexeme.Clear();
+                this.CommentFound = true;
+            }
         }
     }
 }
