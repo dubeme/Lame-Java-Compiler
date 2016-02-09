@@ -227,7 +227,7 @@ namespace Compiler.Models
         New,
 
         [TokenTypeMetadata(Lexeme = "!=", BaseTokenGroup = TokenGroup.Operator)]
-        NotEqual,
+        BooleanNotEqual,
 
         [TokenTypeMetadata(Lexeme = "{", BaseTokenGroup = TokenGroup.SpecialCharacter)]
         OpenCurlyBrace,
@@ -308,10 +308,10 @@ namespace Compiler.Models
         Try,
 
         [TokenTypeMetadata(Lexeme = ">>>", BaseTokenGroup = TokenGroup.Operator)]
-        UnsignedLeftShift,
+        UnsignedRightShift,
 
         [TokenTypeMetadata(Lexeme = ">>>=", BaseTokenGroup = TokenGroup.Operator)]
-        UnsignedLeftShiftEqual,
+        UnsignedRightShiftEqual,
 
         [TokenTypeMetadata(Lexeme = "void", BaseTokenGroup = TokenGroup.ReservedWord)]
         Void,

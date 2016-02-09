@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 namespace Compiler.Services
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public class LexicalAnalyzerService
     {
@@ -144,16 +144,13 @@ namespace Compiler.Services
             {
                 if (this.SourceCodeStream != null && !this.ShowStoppingErrorOccured)
                 {
-                    if (this.PeekNext != EOF)
-                    {
-                        var lexeme = NextLexeme();
+                    var lexeme = NextLexeme();
 
-                        if (EOFReached)
-                        {
-                            return Token.CreateEOFToken(LineNumber);
-                        }
-                        return Token.CreateToken(lexeme, LineNumber);
+                    if (EOFReached)
+                    {
+                        return Token.CreateEOFToken(LineNumber);
                     }
+                    return Token.CreateToken(lexeme, LineNumber);
                 }
             }
             catch (Exception ex)
