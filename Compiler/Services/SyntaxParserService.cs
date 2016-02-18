@@ -1,5 +1,6 @@
 ﻿using Compiler.Models;
 using Compiler.Models.Exceptions;
+using System;
 
 namespace Compiler.Services
 {
@@ -16,6 +17,7 @@ namespace Compiler.Services
 
         public void Parse()
         {
+            Program();
         }
 
         private void GetNextToken()
@@ -28,7 +30,7 @@ namespace Compiler.Services
             {
                 // Since I only buffer 1 token, this has to be reset
                 // The caller will get the buffered token
-                this.ReuseOldToken = true;
+                this.ReuseOldToken = false;
             }
         }
 
@@ -37,6 +39,49 @@ namespace Compiler.Services
             // Program -> MoreClasses MainClass
             MoreClasses();
             MainClass();
+            MoreClasses();
+
+            this.GetNextToken();
+
+            if (this.NextToken.Type != TokenType.EndOfFile)
+            {
+                throw new Exception("Didn't reach end of file, but the program grammar is done matching");
+            }
+        }
+
+        private void MoreClasses()
+        {
+            // MoreClasses -> class idt ExtendsClass { VariableDeclaration MethodDeclaration } MoreClasses | ε
+
+            var production = "MoreClasses";
+
+            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Class))
+            {
+                MatchProductionsNextTokenAs(production, TokenType.Identifier);
+
+                ExtendsClass();
+
+                MatchProductionsNextTokenAs(production, TokenType.OpenCurlyBrace);
+
+                VariableDeclaration();
+                MethodDeclaration();
+
+                MatchProductionsNextTokenAs(production, TokenType.CloseCurlyBrace);
+
+                MoreClasses();
+            }
+        }
+
+        private void ExtendsClass()
+        {
+            // ExtendsClass	->	extendst idt | ε
+            var production = "ClassDeclaration";
+
+            // If an extends is matched
+            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Extends))
+            {
+                MatchProductionsNextTokenAs(production, TokenType.Identifier);
+            }
         }
 
         private void MainClass()
@@ -67,95 +112,161 @@ namespace Compiler.Services
             MatchProductionsNextTokenAs(production, TokenType.CloseCurlyBrace);
         }
 
-        private void MoreClasses()
-        {
-            // MoreClasses -> ClassDeclaration MoreClasses | 
-
-            //
-            if (this.NextToken.Type != TokenType.EndOfFile)
-            {
-                ClassDeclaration();
-                MoreClasses();
-            }
-        }
-
-        private void ClassDeclaration()
-        {
-            // ClassDeclaration -> class idt { VariableDeclaration MethodDeclaration } | class idt extendst idt { VariableDeclaration MethodDeclaration }
-            var production = "ClassDeclaration";
-
-            MatchProductionsNextTokenAs(production, TokenType.Class);
-            MatchProductionsNextTokenAs(production, TokenType.Identifier);
-
-            // If an extends is matched
-            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Extends))
-            {
-                MatchProductionsNextTokenAs(production, TokenType.Identifier);
-            }
-
-
-            MatchProductionsNextTokenAs(production, TokenType.OpenCurlyBrace);
-
-            VariableDeclaration();
-            MethodDeclaration();
-
-            MatchProductionsNextTokenAs(production, TokenType.CloseCurlyBrace);
-        }
-
         private void VariableDeclaration()
         {
-            // VariableDeclaration -> Type IdentifierList ; VariableDeclaration | finalt Type idt = numt; VariableDeclaration | 
+            // VariableDeclaration -> Type IdentifierList ; VariableDeclaration | finalt Type idt = numt; VariableDeclaration | ε
+            var production = "VariableDeclaration";
+
+            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Final))
+            {
+                Type();
+                MatchProductionsNextTokenAs(production, TokenType.Identifier);
+                MatchProductionsNextTokenAs(production, TokenType.Assignment);
+                MatchProductionsNextTokenAs(production, TokenGroup.Literal);
+            }
+            else
+            {
+                try
+                {
+                    Type();
+                }
+                catch (Exception)
+                {
+                    // The ε case.
+                    return;
+                }
+                IdentifierList();
+            }
+
+            MatchProductionsNextTokenAs(production, TokenType.Semicolon);
+            VariableDeclaration();
         }
 
         private void IdentifierList()
         {
             // IdentifierList -> idt | IdentifierList , idt
+            var production = "IdentifierList";
+
+            MatchProductionsNextTokenAs(production, TokenType.Identifier);
+
+            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Comma))
+            {
+                IdentifierList();
+            }
         }
 
         private void Type()
         {
             // Type -> intt | booleant |voidt
+            var production = "Type";
+
+            var matchedType =
+                MatchProductionsNextOptionalTokenAs(production, TokenType.Int) ||
+                MatchProductionsNextOptionalTokenAs(production, TokenType.Boolean) ||
+                MatchProductionsNextOptionalTokenAs(production, TokenType.Void);
+
+            if (!matchedType)
+            {
+                throw new MissingTokenException("Type", production);
+            }
         }
 
         private void MethodDeclaration()
         {
-            // MethodDeclaration -> publict Type idt (FormalParameterList) { VariableDeclaration SequenceofStatements returnt Expression ; } MethodDeclaration | 
+            // MethodDeclaration -> publict Type idt (FormalParameterList) { VariableDeclaration SequenceofStatements returnt Expression ; } MethodDeclaration | ε
+            var production = "MethodDeclaration";
+
+            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Public))
+            {
+                Type();
+
+                MatchProductionsNextTokenAs(production, TokenType.Identifier);
+                MatchProductionsNextTokenAs(production, TokenType.OpenParen);
+
+                FormalParameterList();
+
+                MatchProductionsNextTokenAs(production, TokenType.CloseParen);
+                MatchProductionsNextTokenAs(production, TokenType.OpenCurlyBrace);
+
+                VariableDeclaration();
+                SequenceofStatements();
+
+                MatchProductionsNextTokenAs(production, TokenType.Return);
+
+                Expression();
+
+                MatchProductionsNextTokenAs(production, TokenType.Semicolon);
+                MatchProductionsNextTokenAs(production, TokenType.CloseCurlyBrace);
+
+                MethodDeclaration();
+            }
         }
 
         private void FormalParameterList()
         {
-            // FormalParameterList -> Type idt RestOfFormalParameterList | 
+            // FormalParameterList -> Type idt RestOfFormalParameterList | ε
+            var production = "FormalParameterList";
+
+            Type();
+
+            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Identifier))
+            {
+                RestOfFormalParameterList();
+            }
         }
 
         private void RestOfFormalParameterList()
         {
-            // RestOfFormalParameterList -> , Type idt RestOfFormalParameterList | 
+            // RestOfFormalParameterList -> , Type idt RestOfFormalParameterList | ε
+            var production = "RestOfFormalParameterList";
+
+            MatchProductionsNextTokenAs(production, TokenType.Comma);
+
+            Type();
+
+            MatchProductionsNextTokenAs(production, TokenType.Identifier);
+
+            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Comma))
+            {
+                RestOfFormalParameterList();
+            }
         }
 
         private void SequenceofStatements()
         {
-            // SequenceofStatements -> 
+            // SequenceofStatements -> ε
         }
 
         private void Expression()
         {
-            // Expression -> 
+            // Expression -> ε
         }
 
-        private void MatchProductionsNextTokenAs(string production, TokenType tokenType)
+        private void MatchProductionsNextTokenAs(string production, TokenType expectedType)
         {
             GetNextToken();
-            if (this.NextToken.Type != tokenType)
+
+            if (this.NextToken.Type != expectedType)
             {
-                throw new MissingTokenException(this.NextToken.Type, production);
+                throw new MissingTokenException(expectedType, production);
             }
         }
 
-        private bool MatchProductionsNextOptionalTokenAs(string production, TokenType tokenType)
+        private void MatchProductionsNextTokenAs(string production, TokenGroup expectedGroup)
         {
             GetNextToken();
 
-            if (this.NextToken.Type == tokenType)
+            if (this.NextToken.Group != expectedGroup)
+            {
+                throw new MissingTokenException(expectedGroup, production);
+            }
+        }
+
+        private bool MatchProductionsNextOptionalTokenAs(string production, TokenType expectedType)
+        {
+            GetNextToken();
+
+            if (this.NextToken.Type == expectedType)
             {
                 this.ReuseOldToken = false;
                 return true;
@@ -164,5 +275,41 @@ namespace Compiler.Services
             this.ReuseOldToken = true;
             return false;
         }
+
+        //TODO: Add functionality for matching multiple tokens
+        //private void MatchProductionsNextTokenAs(string production, params TokenType[] tokenTypes)
+        //{
+        //    GetNextToken();
+
+        //    if (tokenTypes != null)
+        //    {
+        //        if (!tokenTypes.Any(tt => tt == this.NextToken.Type))
+        //        {
+        //            throw new MissingTokenException(this.NextToken.Type, production);
+        //        }
+        //    }
+
+        //    throw new MissingTokenException(this.NextToken.Type, production);
+        //}
+
+        //private bool MatchProductionsNextOptionalTokenAs(string production, params TokenType[] tokenTypes)
+        //{
+        //    GetNextToken();
+
+        //    if (tokenTypes != null)
+        //    {
+        //        foreach (var tokenType in tokenTypes)
+        //        {
+        //            if (this.NextToken.Type == tokenType)
+        //            {
+        //                this.ReuseOldToken = false;
+        //                return true;
+        //            }
+        //        }
+        //    }
+
+        //    this.ReuseOldToken = true;
+        //    return false;
+        //}
     }
 }
