@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\Exceptions\MissingTokenException.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Helpers\AttributeHelper.cs" />
     <Compile Include="Models\KnownTokenTypes.cs" />
@@ -53,6 +54,7 @@
     <Compile Include="Models\TokenType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\LexicalAnalyzerService.cs" />
+    <Compile Include="Services\SyntaxParserService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Compiler.Helpers;
+using Compiler.Models.Attributes;
+using System;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -43,7 +45,14 @@ namespace Compiler.Models
         /// <summary>
         /// Gets or sets the group of this Token.
         /// </summary>
-        public TokenGroup Group { get; set; }
+        public TokenGroup Group
+        {
+            get
+            {
+                var attr = AttributeHelper.GetAttribute<TokenTypeMetadataAttribute, TokenType>(this.Type);
+                return attr.BaseTokenGroup;
+            }
+        }
 
         /// <summary>
         /// Gets the line numbe of this Tokenr.
@@ -96,7 +105,7 @@ namespace Compiler.Models
 
                 if (this.HasError)
                 {
-                    return $"{this.LineNumber, LNW} {this.ErrorMessage, -(WIDTH - LNW)}";
+                    return $"{this.LineNumber,LNW} {this.ErrorMessage,-(WIDTH - LNW)}";
                 }
 
                 if (this.Type == TokenType.LiteralInteger)
