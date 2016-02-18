@@ -4,10 +4,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
 using System.Text;
 
-namespace Compiler.Test.Services
+namespace Compiler.Services.Tests
 {
     [TestClass]
-    public class LexicalAnalyzerServiceTest
+    public class LexicalAnalyzerServiceTests
     {
         private const string BOOLEAN_OPERATORS = "! != && || ==";
         private const string ARITHMETIC_OPERATORS = "+ ++ += - -- -= / /= * *= % %=";
@@ -199,7 +199,7 @@ namespace Compiler.Test.Services
             Assert.AreEqual(TokenType.Assignment, token.Type);
         }
 
-        private StreamReader CreateStreamReaderWith(string content)
+        public static StreamReader CreateStreamReaderWith(string content)
         {
             return new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(content)));
         }
