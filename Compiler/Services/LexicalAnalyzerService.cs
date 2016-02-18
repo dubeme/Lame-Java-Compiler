@@ -35,9 +35,9 @@ namespace Compiler.Services
         private static KnownTokenTypes _KnownTokenTypes = KnownTokenTypes.Instance;
 
         /// <summary>
-        /// The line number
+        /// Gets the line number.
         /// </summary>
-        private int LineNumber = 1;
+        public int LineNumber { get; private set; }
 
         /// <summary>
         /// Gets the next character.
@@ -127,6 +127,7 @@ namespace Compiler.Services
         public LexicalAnalyzerService(StreamReader sourceFile)
         {
             this.SourceCodeStream = sourceFile;
+            this.LineNumber = 1;
         }
 
         /// <summary>
