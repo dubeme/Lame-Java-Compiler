@@ -17,7 +17,14 @@ namespace Compiler.Services
 
         public void Parse()
         {
-            Program();
+            try
+            {
+                Program();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error parsing token on line #{LexicalAnalyzer.LineNumber}", ex);
+            }
         }
 
         private void GetNextToken()
@@ -39,7 +46,6 @@ namespace Compiler.Services
             // Program -> MoreClasses MainClass
             MoreClasses();
             MainClass();
-            MoreClasses();
 
             this.GetNextToken();
 
@@ -123,6 +129,8 @@ namespace Compiler.Services
                 MatchProductionsNextTokenAs(production, TokenType.Identifier);
                 MatchProductionsNextTokenAs(production, TokenType.Assignment);
                 MatchProductionsNextTokenAs(production, TokenGroup.Literal);
+                MatchProductionsNextTokenAs(production, TokenType.Semicolon);
+                VariableDeclaration();
             }
             else
             {
@@ -135,11 +143,11 @@ namespace Compiler.Services
                     // The ε case.
                     return;
                 }
-                IdentifierList();
-            }
 
-            MatchProductionsNextTokenAs(production, TokenType.Semicolon);
-            VariableDeclaration();
+                IdentifierList();
+                MatchProductionsNextTokenAs(production, TokenType.Semicolon);
+                VariableDeclaration();
+            }
         }
 
         private void IdentifierList()
@@ -207,12 +215,18 @@ namespace Compiler.Services
             // FormalParameterList -> Type idt RestOfFormalParameterList | ε
             var production = "FormalParameterList";
 
-            Type();
-
-            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Identifier))
+            try
             {
-                RestOfFormalParameterList();
+                Type();
             }
+            catch (Exception)
+            {
+                // ε case
+                return;
+            }
+
+            MatchProductionsNextTokenAs(production, TokenType.Identifier);
+            RestOfFormalParameterList();
         }
 
         private void RestOfFormalParameterList()
@@ -220,15 +234,16 @@ namespace Compiler.Services
             // RestOfFormalParameterList -> , Type idt RestOfFormalParameterList | ε
             var production = "RestOfFormalParameterList";
 
-            MatchProductionsNextTokenAs(production, TokenType.Comma);
-
-            Type();
-
-            MatchProductionsNextTokenAs(production, TokenType.Identifier);
-
             if (MatchProductionsNextOptionalTokenAs(production, TokenType.Comma))
             {
-                RestOfFormalParameterList();
+                Type();
+
+                MatchProductionsNextTokenAs(production, TokenType.Identifier);
+
+                if (MatchProductionsNextOptionalTokenAs(production, TokenType.Comma))
+                {
+                    RestOfFormalParameterList();
+                }
             }
         }
 

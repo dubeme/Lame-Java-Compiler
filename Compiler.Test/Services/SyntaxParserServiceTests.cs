@@ -37,16 +37,15 @@ namespace Compiler.Services.Tests
 
         string testString3 = @"class One
         {
-            int 1;
-            
+            int erer;
+            final int kl = 2;
+            public void func(){ return ;}
         }
         class Two
         {
             int a;
             boolean b;
-        }
-        final class Main
-        {
+        } final class Main {
             public static void main(String[] args)
             {
             }
