@@ -16,6 +16,9 @@ namespace Compiler.Services
             {
                 var streamReader = new StreamReader(fileName);
                 var lexAnalyzer = new LexicalAnalyzerService(streamReader);
+                var syntaxParser = new SyntaxParserService(lexAnalyzer);
+
+                syntaxParser.Parse();
             }
             catch (Exception ex)
             {

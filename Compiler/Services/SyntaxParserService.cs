@@ -23,7 +23,7 @@ namespace Compiler.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error parsing token on line #{LexicalAnalyzer.LineNumber}", ex);
+                throw new Exception($"Error parsing token on line #{LexicalAnalyzer.LineNumber}.\n\n {ex.Message}", ex);
             }
         }
 
@@ -175,7 +175,7 @@ namespace Compiler.Services
 
             if (!matchedType)
             {
-                throw new MissingTokenException("Type", production);
+                throw new MissingTokenException("Type", this.NextToken.Type.ToString(), production);
             }
         }
 
@@ -263,7 +263,7 @@ namespace Compiler.Services
 
             if (this.NextToken.Type != expectedType)
             {
-                throw new MissingTokenException(expectedType, production);
+                throw new MissingTokenException(expectedType, this.NextToken.Type, production);
             }
         }
 
@@ -273,7 +273,7 @@ namespace Compiler.Services
 
             if (this.NextToken.Group != expectedGroup)
             {
-                throw new MissingTokenException(expectedGroup, production);
+                throw new MissingTokenException(expectedGroup, this.NextToken.Group, production);
             }
         }
 
