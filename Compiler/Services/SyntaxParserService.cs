@@ -175,7 +175,7 @@ namespace Compiler.Services
 
             if (!matchedType)
             {
-                throw new MissingTokenException("Type", this.NextToken.Type.ToString(), production);
+                throw new MissingTokenException("int|boolean|void", this.NextToken.Type.ToString(), production);
             }
         }
 
