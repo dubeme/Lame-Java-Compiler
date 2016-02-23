@@ -290,41 +290,5 @@ namespace Compiler.Services
             this.ReuseOldToken = true;
             return false;
         }
-
-        //TODO: Add functionality for matching multiple tokens
-        //private void MatchProductionsNextTokenAs(string production, params TokenType[] tokenTypes)
-        //{
-        //    GetNextToken();
-
-        //    if (tokenTypes != null)
-        //    {
-        //        if (!tokenTypes.Any(tt => tt == this.NextToken.Type))
-        //        {
-        //            throw new MissingTokenException(this.NextToken.Type, production);
-        //        }
-        //    }
-
-        //    throw new MissingTokenException(this.NextToken.Type, production);
-        //}
-
-        //private bool MatchProductionsNextOptionalTokenAs(string production, params TokenType[] tokenTypes)
-        //{
-        //    GetNextToken();
-
-        //    if (tokenTypes != null)
-        //    {
-        //        foreach (var tokenType in tokenTypes)
-        //        {
-        //            if (this.NextToken.Type == tokenType)
-        //            {
-        //                this.ReuseOldToken = false;
-        //                return true;
-        //            }
-        //        }
-        //    }
-
-        //    this.ReuseOldToken = true;
-        //    return false;
-        //}
     }
 }
