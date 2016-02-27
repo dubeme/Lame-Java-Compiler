@@ -23,7 +23,6 @@ namespace Compiler.Services.Tests
             }
         }";
 
-
         const string testString3 = @"class One
         {
             int erer;
@@ -45,14 +44,13 @@ namespace Compiler.Services.Tests
 
         const string testString5 = @"class tim { 
             int x, y, z; 
-            public void ass(){ return;}
-        };
+            public void ass(int a, int b, int c){ return;}
+        }
         final class Main {public static void main(String[] args){}}";
-
-
+        
         [TestMethod()]
         [TestCategory("Parse Syntax Tree")]
-        public void ParseTest1()
+        public void TestJustMainClass()
         {
             var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(testString1);
             var parser = new SyntaxParserService(new LexicalAnalyzerService(streamReader));
@@ -62,7 +60,7 @@ namespace Compiler.Services.Tests
 
         [TestMethod()]
         [TestCategory("Parse Syntax Tree")]
-        public void ParseTest2()
+        public void TestMainClassAndMoreClasses()
         {
             var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(testString2);
             var parser = new SyntaxParserService(new LexicalAnalyzerService(streamReader));
@@ -72,7 +70,7 @@ namespace Compiler.Services.Tests
 
         [TestMethod()]
         [TestCategory("Parse Syntax Tree")]
-        public void ParseTest3()
+        public void TestFieldsAndMethodsInClass()
         {
             var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(testString3);
             var parser = new SyntaxParserService(new LexicalAnalyzerService(streamReader));
@@ -82,7 +80,7 @@ namespace Compiler.Services.Tests
 
         [TestMethod()]
         [TestCategory("Parse Syntax Tree")]
-        public void ParseTest4()
+        public void TestMultipleFieldOnOneLine()
         {
             var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(testString4);
             var parser = new SyntaxParserService(new LexicalAnalyzerService(streamReader));
@@ -92,7 +90,7 @@ namespace Compiler.Services.Tests
 
         [TestMethod()]
         [TestCategory("Parse Syntax Tree")]
-        public void ParseTest5()
+        public void TestMultipleParameterForMemberFunction()
         {
             var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(testString5);
             var parser = new SyntaxParserService(new LexicalAnalyzerService(streamReader));

@@ -23,7 +23,12 @@ namespace Compiler.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error parsing token on line #{LexicalAnalyzer.LineNumber}.\n\n {ex.Message}", ex);
+                var errMessage = $"Error parsing token on" +
+                    $" line #{LexicalAnalyzer.LineNumber}," +
+                    $" Column #{LexicalAnalyzer.Column}.\n\n" +
+                    $" {ex.Message}";
+
+                throw new Exception(errMessage, ex);
             }
         }
 
@@ -239,11 +244,7 @@ namespace Compiler.Services
                 Type();
 
                 MatchProductionsNextTokenAs(production, TokenType.Identifier);
-
-                if (MatchProductionsNextOptionalTokenAs(production, TokenType.Comma))
-                {
-                    RestOfFormalParameterList();
-                }
+                RestOfFormalParameterList();
             }
         }
 
