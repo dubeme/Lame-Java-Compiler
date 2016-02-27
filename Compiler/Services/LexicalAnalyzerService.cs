@@ -24,6 +24,8 @@ namespace Compiler.Services
         /// </summary>
         private const char EOL = '\n';
 
+        private bool LastCharWasEOL = false;
+
         /// <summary>
         /// Gets or sets the source code reader of this LexicalAnalyzerService.
         /// </summary>
@@ -38,6 +40,11 @@ namespace Compiler.Services
         /// Gets the line number.
         /// </summary>
         public int LineNumber { get; private set; }
+
+        /// <summary>
+        /// Gets the column.
+        /// </summary>
+        public int Column { get; private set; }
 
         /// <summary>
         /// Gets the next character.
@@ -57,15 +64,27 @@ namespace Compiler.Services
                     // Ignore \r
                     // The assumption is that the next character is \n
                     this.SourceCodeStream.Read();
+
+                    // Since I ignore the \r
+                    this.Column++;
                 }
 
                 var ch = (char)this.SourceCodeStream.Read();
 
+
+                if (this.LastCharWasEOL)
+                {
+                    this.LastCharWasEOL = false;
+                    this.Column = 0;
+                }
+
                 if (ch == EOL)
                 {
                     this.LineNumber++;
+                    this.LastCharWasEOL = true;
                 }
 
+                this.Column++;
                 return ch;
             }
         }
@@ -128,6 +147,7 @@ namespace Compiler.Services
         {
             this.SourceCodeStream = sourceFile;
             this.LineNumber = 1;
+            this.Column = 0;
         }
 
         /// <summary>
