@@ -1,4 +1,6 @@
-﻿namespace Compiler.Models.Table
+﻿using System;
+
+namespace Compiler.Models.Table
 {
     /// <summary>
     ///
@@ -18,5 +20,14 @@
         /// Gets or sets the offset of this Constant.
         /// </summary>
         public int Offset { get; set; }
+
+        /// <summary>
+        /// Prints the content using the specified printer.
+        /// </summary>
+        /// <param name="printer">The printer.</param>
+        public void Print(Action<object> printer)
+        {
+            printer($"{this.DataType,-10} {this.Offset,-10}");
+        }
     }
 }
