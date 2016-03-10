@@ -5,24 +5,9 @@ namespace Compiler.Models.Table
     /// <summary>
     ///
     /// </summary>
-    /// <seealso cref="Compiler.Models.Table.IEntry" />
-    public class MethodEntry : IEntry
+    /// <seealso cref="Compiler.Models.Table.IContent" />
+    public class MethodEntry : IContent
     {
-        /// <summary>
-        /// Gets or sets the token of this IEntry.
-        /// </summary>
-        public Token Token { get; set; }
-
-        /// <summary>
-        /// Gets or sets the depth of this IEntry.
-        /// </summary>
-        public int Depth { get; set; }
-
-        /// <summary>
-        /// Gets or sets the type of this IEntry.
-        /// </summary>
-        public EntryType Type { get; set; }
-
         /// <summary>
         /// Gets or sets the total size of the local variables in this Method.
         /// </summary>

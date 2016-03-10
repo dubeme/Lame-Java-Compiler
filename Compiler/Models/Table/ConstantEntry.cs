@@ -3,24 +3,9 @@
     /// <summary>
     ///
     /// </summary>
-    /// <seealso cref="Compiler.Models.Table.IEntry" />
-    public class ConstantEntry : IEntry
+    /// <seealso cref="Compiler.Models.Table.IContent" />
+    public class ConstantEntry : IContent
     {
-        /// <summary>
-        /// Gets or sets the token of this IEntry.
-        /// </summary>
-        public Token Token { get; set; }
-
-        /// <summary>
-        /// Gets or sets the depth of this IEntry.
-        /// </summary>
-        public int Depth { get; set; }
-
-        /// <summary>
-        /// Gets or sets the type of this IEntry.
-        /// </summary>
-        public EntryType Type { get; set; }
-
         /// <summary>
         /// Gets or sets the type of this Constant.
         /// </summary>
