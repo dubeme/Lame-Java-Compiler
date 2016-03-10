@@ -1,33 +1,47 @@
 ﻿using Compiler.Models.Table;
-using System.Collections.Generic;
 
 namespace Compiler.Models
 {
     public class SymbolTable
     {
         private const int PRIME_TABLE_SIZE = 211;
-        private readonly LinkedListNode<IEntry>[] _Table;
+        private readonly LinkedListNode<Entry>[] _Table;
 
         public SymbolTable()
         {
-            _Table = new LinkedListNode<IEntry>[PRIME_TABLE_SIZE];
+            _Table = new LinkedListNode<Entry>[PRIME_TABLE_SIZE];
         }
 
         public void Insert(Token token, int depth)
         {
             var index = (int)Hash(token.Lexeme) % PRIME_TABLE_SIZE;
-            
+            var newEntry = new LinkedListNode<Entry>
+            {
+                Value = new Entry
+                {
+                    Token = token,
+                    Depth = depth
+                }
+            };
+
+            if (this._Table[index] != null)
+            {
+                newEntry.Next = this._Table[index];
+            }
+
+            this._Table[index] = newEntry;
         }
 
         public void WriteTable(int depth)
         {
+
         }
 
         public void DeleteDepth(int depth)
         {
         }
 
-        public IEntry Lookup(string lexeme)
+        public Entry Lookup(string lexeme)
         {
             return null;
         }
