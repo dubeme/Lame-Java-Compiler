@@ -8,17 +8,17 @@
         /// <summary>
         /// Gets or sets the token of this Entry.
         /// </summary>
-        Token Token { get; set; }
+        public Token Token { get; set; }
 
         /// <summary>
         /// Gets or sets the depth of this Entry.
         /// </summary>
-        int Depth { get; set; }
+        public int Depth { get; set; }
 
         /// <summary>
         /// Gets or sets the type of this Entry.
         /// </summary>
-        EntryType Type { get; set; }
+        public EntryType Type { get; set; }
 
         /// <summary>
         /// Gets or sets the content of this Entry.

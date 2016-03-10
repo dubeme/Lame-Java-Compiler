@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Compiler.Models.Table
+﻿namespace Compiler.Models.Table
 {
     /// <summary>
     ///
