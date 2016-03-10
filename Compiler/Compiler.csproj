@@ -44,15 +44,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\Exceptions\MissingTokenException.cs" />
-    <Compile Include="Models\Table\Class.cs" />
-    <Compile Include="Models\Table\Constant.cs" />
-    <Compile Include="Models\Table\Function.cs" />
-    <Compile Include="Models\Table\IContent.cs" />
+    <Compile Include="Models\Table\ClassEntry.cs" />
+    <Compile Include="Models\Table\ConstantEntry.cs" />
+    <Compile Include="Models\Table\MethodEntry.cs" />
     <Compile Include="Models\SymbolTable.cs" />
-    <Compile Include="Models\Table\Entry.cs" />
+    <Compile Include="Models\Table\IEntry.cs" />
     <Compile Include="Models\Table\EntryType.cs" />
-    <Compile Include="Models\Table\ParameterNode.cs" />
-    <Compile Include="Models\Table\Variable.cs" />
+    <Compile Include="Models\Table\VariableEntry.cs" />
     <Compile Include="Models\Table\VariableType.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Helpers\AttributeHelper.cs" />
