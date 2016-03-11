@@ -15,5 +15,10 @@
         /// Gets or sets the next node of this LinkedListNode{T}.
         /// </summary>
         public LinkedListNode<T> Next { get; set; }
+
+        /// <summary>
+        /// Gets or sets the previous node of this LinkedListNode{T}.
+        /// </summary>
+        public LinkedListNode<T> Previous { get; set; }
     }
 }
