@@ -17,6 +17,7 @@ namespace Compiler.Services.Tests
         private const string OTHER_OPERATORS = "[ ] ( ) { } , . : ; ? =";
 
         [TestMethod]
+        [TestCategory("Lexical Analyzer")]
         public void TestArithmeticOperators()
         {
             var reader = CreateStreamReaderWith(ARITHMETIC_OPERATORS);
@@ -60,6 +61,7 @@ namespace Compiler.Services.Tests
         }
 
         [TestMethod]
+        [TestCategory("Lexical Analyzer")]
         public void TestBooleanOperators()
         {
             var reader = CreateStreamReaderWith(BOOLEAN_OPERATORS);
@@ -85,6 +87,7 @@ namespace Compiler.Services.Tests
         }
 
         [TestMethod]
+        [TestCategory("Lexical Analyzer")]
         public void TestComparisonOperators()
         {
             var reader = CreateStreamReaderWith(COMPARISON_OPERATORS);
@@ -104,6 +107,7 @@ namespace Compiler.Services.Tests
         }
 
         [TestMethod]
+        [TestCategory("Lexical Analyzer")]
         public void TestLogicalShifOperators()
         {
             var reader = CreateStreamReaderWith(LOGICAL_SHIFT_OPERATORS);
@@ -129,6 +133,7 @@ namespace Compiler.Services.Tests
         }
 
         [TestMethod]
+        [TestCategory("Lexical Analyzer")]
         public void TestBitwiseOperators()
         {
             var reader = CreateStreamReaderWith(BITWISE_OPERATORS);
@@ -157,6 +162,7 @@ namespace Compiler.Services.Tests
         }
 
         [TestMethod]
+        [TestCategory("Lexical Analyzer")]
         public void TestOtherOperators()
         {
             var reader = CreateStreamReaderWith(OTHER_OPERATORS);
