@@ -3,16 +3,34 @@ using System;
 
 namespace Compiler.Models
 {
+    /// <summary>
+    ///
+    /// </summary>
     public class SymbolTable
     {
+        /// <summary>
+        /// The size of the table
+        /// </summary>
         private const int PRIME_TABLE_SIZE = 211;
+
+        /// <summary>
+        /// The table
+        /// </summary>
         private readonly LinkedListNode<Entry>[] _Table;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SymbolTable"/> class.
+        /// </summary>
         public SymbolTable()
         {
             _Table = new LinkedListNode<Entry>[PRIME_TABLE_SIZE];
         }
 
+        /// <summary>
+        /// Inserts the specified token at the given depth.
+        /// </summary>
+        /// <param name="token">The token.</param>
+        /// <param name="depth">The depth.</param>
         public void Insert(Token token, int depth)
         {
             var index = (int)Hash(token.Lexeme) % PRIME_TABLE_SIZE;
@@ -27,6 +45,9 @@ namespace Compiler.Models
 
             if (this._Table[index] != null)
             {
+                // TODO: Check for duplicate, will need depth in lookup
+                // var result = this.Lookup(token.Lexeme);
+
                 newEntry.Next = this._Table[index];
                 this._Table[index].Previous = newEntry;
             }
@@ -34,10 +55,13 @@ namespace Compiler.Models
             this._Table[index] = newEntry;
         }
 
-        public void WriteTable(int depth)
+        /// <summary>
+        /// Writes all the entries at the given depth with the print method.
+        /// </summary>
+        /// <param name="depth">The depth.</param>
+        /// <param name="printer">The printer.</param>
+        public void WriteTable(int depth, Action<object> printer)
         {
-            var printer = new Action<object>((obj) => { });
-
             for (int index = 0; index < PRIME_TABLE_SIZE; index++)
             {
                 var item = this._Table[index];
@@ -56,6 +80,10 @@ namespace Compiler.Models
             }
         }
 
+        /// <summary>
+        /// Deletes all the entries at the depth.
+        /// </summary>
+        /// <param name="depth">The depth.</param>
         public void DeleteDepth(int depth)
         {
             for (int index = 0; index < PRIME_TABLE_SIZE; index++)
@@ -67,6 +95,11 @@ namespace Compiler.Models
             }
         }
 
+        /// <summary>
+        /// Lookups the specified lexeme.
+        /// </summary>
+        /// <param name="lexeme">The lexeme.</param>
+        /// <returns></returns>
         public Entry Lookup(string lexeme)
         {
             var index = (int)Hash(lexeme) % PRIME_TABLE_SIZE;
@@ -92,7 +125,9 @@ namespace Compiler.Models
         /// Hashes the specified lexeme, using the hashpjw from P.J Weinberger's C compiler.
         /// </summary>
         /// <param name="lexeme">The lexeme.</param>
-        /// <returns>The hash of the lexeme</returns>
+        /// <returns>
+        /// The hash of the lexeme
+        /// </returns>
         private uint Hash(string lexeme)
         {
             uint hash = 0, temp;
@@ -112,6 +147,12 @@ namespace Compiler.Models
             return hash;
         }
 
+        /// <summary>
+        /// Removes all the entries at the specified depth.
+        /// </summary>
+        /// <param name="depth">The depth.</param>
+        /// <param name="src">The source.</param>
+        /// <returns></returns>
         private LinkedListNode<Entry> Remove(int depth, LinkedListNode<Entry> src)
         {
             var result = src;
