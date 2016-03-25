@@ -48,9 +48,10 @@ namespace Compiler.Models
             if (this._Table[index] != null)
             {
                 // TODO: Check for duplicate, will need depth in lookup
-                // var result = this.Lookup(token.Lexeme);
+                var result = this.Lookup(token.Lexeme);
 
-                if (this.Lookup(token.Lexeme) != null)
+                // result is the latest [Lexeme] inserted into the table
+                if (result != null && result.Depth == depth)
                 {
                     throw new DuplicateEntryException(token.Lexeme);
                 }
