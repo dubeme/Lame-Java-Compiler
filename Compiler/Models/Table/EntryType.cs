@@ -5,6 +5,7 @@
         Unknown,
         Constant,
         Variable,
-        Function
+        Function,
+        Class
     }
 }

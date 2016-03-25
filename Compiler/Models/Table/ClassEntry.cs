@@ -22,7 +22,7 @@ namespace Compiler.Models.Table
         /// <summary>
         /// Gets or sets the variable names of this ClassEntry.
         /// </summary>
-        public LinkedListNode<string> VariableNames { get; set; }
+        public LinkedListNode<string> Fields { get; set; }
 
         /// <summary>
         /// Prints the content using the specified printer.
@@ -31,24 +31,37 @@ namespace Compiler.Models.Table
         public void Print(Action<object> printer)
         {
             var str = new StringBuilder();
-            var tab = "\t";
+            var tab = "    ";
 
-            str.AppendLine(this.SizeOfLocal.ToString());
-
-            str.AppendLine("Methods");
-            var methodNames = this.MethodNames;
-            while (methodNames != null)
+            if (this.Fields == null)
             {
-                str.AppendLine($"{tab}{methodNames.Value}");
-                methodNames = methodNames.Next;
+                str.AppendLine("Class contains no fields");
+            }
+            else
+            {
+                str.AppendLine($"Total size of the class fields - {this.SizeOfLocal}");
+                str.AppendLine("Fields");
+                var fields = this.Fields;
+                while (fields != null)
+                {
+                    str.AppendLine($"{tab}{fields.Value}");
+                    fields = fields.Next;
+                }
             }
 
-            str.AppendLine("Variables");
-            var variableNames = this.VariableNames;
-            while (variableNames != null)
+            if (this.MethodNames == null)
             {
-                str.AppendLine($"{tab}{variableNames.Value}");
-                variableNames = variableNames.Next;
+                str.AppendLine("Class contains no methods");
+            }
+            else
+            {
+                str.AppendLine("Methods");
+                var methodNames = this.MethodNames;
+                while (methodNames != null)
+                {
+                    str.AppendLine($"{tab}{methodNames.Value}");
+                    methodNames = methodNames.Next;
+                }
             }
 
             printer(str);

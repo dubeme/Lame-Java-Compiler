@@ -80,6 +80,15 @@ namespace Compiler.Models
                     {
                         if (item.Value.Depth == depth && this.Printer != null)
                         {
+                            //this.Printer(item.Value.Token.Lexeme);
+                            //this.Printer(item.Value.Depth);
+                            //this.Printer(item.Value.Type);
+
+                            var str = $"Depth ({item.Value.Depth}), ";
+                            str += $"Type ({item.Value.Type}), ";
+                            str += $"Lexeme ({item.Value.Token.Lexeme})";
+
+                            this.Printer($"Entry details; {str}");
                             item.Value.Content.Print(this.Printer);
                         }
 

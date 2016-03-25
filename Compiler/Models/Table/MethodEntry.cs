@@ -39,20 +39,22 @@ namespace Compiler.Models.Table
         public void Print(Action<object> printer)
         {
             var str = new StringBuilder();
-            var tab = "\t";
+            var tab = "    ";
 
-            str.AppendLine(this.SizeOfLocal.ToString());
-            str.AppendLine(this.NumberOfParameters.ToString());
-            str.AppendLine(this.ReturnType.ToString());
+            str.AppendLine($"Return type - {this.ReturnType}");
+            str.AppendLine($"Number of parameters - {this.NumberOfParameters}");
+            str.AppendLine($"Size of local variables - {this.SizeOfLocal}");
 
-            str.AppendLine("Parameters");
-            var parameterTypes = this.ParameterTypes;
-            while (parameterTypes != null)
+            if (this.ParameterTypes != null)
             {
-                str.AppendLine($"{tab}{parameterTypes.Value}");
-                parameterTypes = parameterTypes.Next;
+                var paramsTypes = this.ParameterTypes;
+                while (paramsTypes != null)
+                {
+                    str.AppendLine($"{tab}{paramsTypes.Value}");
+                    paramsTypes = paramsTypes.Next;
+                }
             }
-
+            
             printer(str);
         }
     }
