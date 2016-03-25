@@ -37,10 +37,10 @@ namespace Compiler.Services
         private TokenType CurrentDataType;
         private VariableScope CurrentVariableScope;
 
-        public SyntaxParserService(LexicalAnalyzerService lexAnalyzer)
+        public SyntaxParserService(LexicalAnalyzerService lexAnalyzer, SymbolTable symbolTable)
         {
             this.LexicalAnalyzer = lexAnalyzer;
-            this.SymbolTable = new SymbolTable();
+            this.SymbolTable = symbolTable;
         }
 
         public void Parse()

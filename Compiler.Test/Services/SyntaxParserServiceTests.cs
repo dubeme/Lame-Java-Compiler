@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Compiler.Models;
 
 namespace Compiler.Services.Tests
 {
@@ -49,53 +50,58 @@ namespace Compiler.Services.Tests
         final class Main {public static void main(String[] args){}}";
         
         [TestMethod()]
-        [TestCategory("Parse Syntax Tree")]
+        [TestCategory("Syntax Tree Parser")]
         public void TestJustMainClass()
         {
-            var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(testString1);
-            var parser = new SyntaxParserService(new LexicalAnalyzerService(streamReader));
+            var parser = CreateSyntaxParserService(testString1);
 
             parser.Parse();
         }
 
         [TestMethod()]
-        [TestCategory("Parse Syntax Tree")]
+        [TestCategory("Syntax Tree Parser")]
         public void TestMainClassAndMoreClasses()
         {
-            var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(testString2);
-            var parser = new SyntaxParserService(new LexicalAnalyzerService(streamReader));
+            var parser = CreateSyntaxParserService(testString2);
 
             parser.Parse();
         }
 
         [TestMethod()]
-        [TestCategory("Parse Syntax Tree")]
+        [TestCategory("Syntax Tree Parser")]
         public void TestFieldsAndMethodsInClass()
         {
-            var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(testString3);
-            var parser = new SyntaxParserService(new LexicalAnalyzerService(streamReader));
+            var parser = CreateSyntaxParserService(testString3);
 
             parser.Parse();
         }
 
         [TestMethod()]
-        [TestCategory("Parse Syntax Tree")]
+        [TestCategory("Syntax Tree Parser")]
         public void TestMultipleFieldOnOneLine()
         {
-            var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(testString4);
-            var parser = new SyntaxParserService(new LexicalAnalyzerService(streamReader));
+            var parser = CreateSyntaxParserService(testString4);
 
             parser.Parse();
         }
 
         [TestMethod()]
-        [TestCategory("Parse Syntax Tree")]
+        [TestCategory("Syntax Tree Parser")]
         public void TestMultipleParameterForMemberFunction()
         {
-            var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(testString5);
-            var parser = new SyntaxParserService(new LexicalAnalyzerService(streamReader));
+            var parser = CreateSyntaxParserService(testString5);
 
             parser.Parse();
+        }
+
+        private SyntaxParserService CreateSyntaxParserService(string data)
+        {
+
+            var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(data);
+            var lexAnalyzer = new LexicalAnalyzerService(streamReader);
+            var symbolTable = new SymbolTable();
+
+            return new SyntaxParserService(lexAnalyzer, symbolTable);
         }
     }
 }

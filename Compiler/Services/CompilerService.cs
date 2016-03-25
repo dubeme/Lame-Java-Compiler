@@ -17,7 +17,9 @@ namespace Compiler.Services
             {
                 var streamReader = new StreamReader(fileName);
                 var lexAnalyzer = new LexicalAnalyzerService(streamReader);
-                var syntaxParser = new SyntaxParserService(lexAnalyzer);
+                var symbolTable = new SymbolTable();
+
+                var syntaxParser = new SyntaxParserService(lexAnalyzer, symbolTable);
 
                 syntaxParser.Parse();
             }
@@ -67,7 +69,6 @@ namespace Compiler.Services
             }
         }
 
-        // 
         public static StreamReader CreateStreamReaderWith(string content)
         {
             return new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(content)));
