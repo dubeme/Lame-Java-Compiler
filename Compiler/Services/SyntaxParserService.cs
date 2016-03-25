@@ -1,5 +1,7 @@
 ﻿using Compiler.Models;
 using Compiler.Models.Exceptions;
+using Compiler.Models.Misc;
+using Compiler.Models.Table;
 using System;
 
 namespace Compiler.Services
@@ -28,6 +30,13 @@ namespace Compiler.Services
             }
         }
 
+        private int Depth;
+        private int Offset;
+        private MethodEntry CurrentMethod;
+        private ClassEntry CurrentClass;
+        private TokenType CurrentDataType;
+        private VariableScope CurrentVariableScope;
+
         public SyntaxParserService(LexicalAnalyzerService lexAnalyzer)
         {
             this.LexicalAnalyzer = lexAnalyzer;
@@ -51,20 +60,20 @@ namespace Compiler.Services
             }
         }
 
-        private void GetNextToken()
+        private void SetNextToken()
         {
             this.CurrentToken = this.LexicalAnalyzer.GetNextToken();
         }
 
         private void Program()
         {
-            GetNextToken();
+            SetNextToken();
 
             // Program -> MoreClasses MainClass
             MoreClasses();
             MainClass();
 
-            this.GetNextToken();
+            this.SetNextToken();
 
             if (this.CurrentToken.Type != TokenType.EndOfFile)
             {
@@ -83,7 +92,7 @@ namespace Compiler.Services
                 return;
             }
 
-            GetNextToken();
+            SetNextToken();
             MatchAndSetToken(production, TokenType.Identifier);
 
             ExtendsClass();
@@ -106,7 +115,7 @@ namespace Compiler.Services
             // If an extends is matched
             if (this.CurrentToken.Type == TokenType.Extends)
             {
-                GetNextToken();
+                SetNextToken();
                 MatchAndSetToken(production, TokenType.Identifier);
             }
         }
@@ -146,18 +155,25 @@ namespace Compiler.Services
 
             if (CurrentToken.Type == TokenType.Final)
             {
-                GetNextToken();
+                SetNextToken();
+
+                var dataType = CurrentToken.Type;
                 Type();
+
+                var identifier = CurrentToken;
                 MatchAndSetToken(production, TokenType.Identifier);
                 MatchAndSetToken(production, TokenType.Assignment);
+
+                var value = CurrentToken.Lexeme;
                 MatchAndSetToken(production, TokenGroup.Literal);
-                MatchAndSetToken(production, TokenType.Semicolon);
-                VariableDeclaration();
+
+                InsertConstant(dataType, identifier, value);
             }
             else
             {
                 try
                 {
+                    CurrentDataType = CurrentToken.Type;
                     Type();
                 }
                 catch (Exception)
@@ -167,21 +183,23 @@ namespace Compiler.Services
                 }
 
                 IdentifierList();
-                MatchAndSetToken(production, TokenType.Semicolon);
-                VariableDeclaration();
             }
+            MatchAndSetToken(production, TokenType.Semicolon);
+            VariableDeclaration();
         }
 
         private void IdentifierList()
         {
             // IdentifierList -> idt | IdentifierList , idt
             var production = "IdentifierList";
+            var identifier = CurrentToken;
 
             MatchAndSetToken(production, TokenType.Identifier);
+            InsertVariable(CurrentDataType, identifier, CurrentVariableScope);
 
             if (CurrentToken.Type == TokenType.Comma)
             {
-                GetNextToken();
+                SetNextToken();
                 IdentifierList();
             }
         }
@@ -196,7 +214,7 @@ namespace Compiler.Services
                 case TokenType.Int:
                 case TokenType.Void:
                 case TokenType.Boolean:
-                    GetNextToken();
+                    SetNextToken();
                     break;
 
                 default:
@@ -211,16 +229,29 @@ namespace Compiler.Services
 
             if (CurrentToken.Type == TokenType.Public)
             {
-                GetNextToken();
+                SetNextToken();
+
+                var returnType = CurrentToken.Type;
                 Type();
 
+                var identifier = CurrentToken;
                 MatchAndSetToken(production, TokenType.Identifier);
+
+                // Insert method in symbol table
+                InsertMethod(returnType, identifier);
+
+                // update depth
+                Depth++;
+
                 MatchAndSetToken(production, TokenType.OpenParen);
 
                 FormalParameterList();
 
                 MatchAndSetToken(production, TokenType.CloseParen);
                 MatchAndSetToken(production, TokenType.OpenCurlyBrace);
+
+                // reset offset
+                Offset = 0;
 
                 VariableDeclaration();
                 SequenceofStatements();
@@ -232,6 +263,12 @@ namespace Compiler.Services
                 MatchAndSetToken(production, TokenType.Semicolon);
                 MatchAndSetToken(production, TokenType.CloseCurlyBrace);
 
+                // update depth
+                Depth--;
+
+                // reset offset
+                Offset = 0;
+
                 MethodDeclaration();
             }
         }
@@ -240,6 +277,7 @@ namespace Compiler.Services
         {
             // FormalParameterList -> Type idt RestOfFormalParameterList | ε
             var production = "FormalParameterList";
+            var dataType = CurrentToken.Type;
 
             try
             {
@@ -251,7 +289,10 @@ namespace Compiler.Services
                 return;
             }
 
+            var identifier = CurrentToken;
             MatchAndSetToken(production, TokenType.Identifier);
+
+            InsertVariable(dataType, identifier, VariableScope.MethodParameter);
             RestOfFormalParameterList();
         }
 
@@ -262,10 +303,17 @@ namespace Compiler.Services
 
             if (CurrentToken.Type == TokenType.Comma)
             {
-                GetNextToken();
+                SetNextToken();
+                var dataType = CurrentToken.Type;
+
                 Type();
 
+                var identifier = CurrentToken;
+
                 MatchAndSetToken(production, TokenType.Identifier);
+
+                InsertVariable(dataType, identifier, VariableScope.MethodParameter);
+
                 RestOfFormalParameterList();
             }
         }
@@ -287,7 +335,7 @@ namespace Compiler.Services
                 throw new MissingTokenException(expectedType, this.CurrentToken.Type, production);
             }
 
-            GetNextToken();
+            SetNextToken();
         }
 
         private void MatchAndSetToken(string production, TokenGroup expectedGroup)
@@ -297,7 +345,115 @@ namespace Compiler.Services
                 throw new MissingTokenException(expectedGroup, this.CurrentToken.Group, production);
             }
 
-            GetNextToken();
+            SetNextToken();
+        }
+
+        private void InsertVariable(TokenType dataType, Token identifier, VariableScope scope)
+        {
+            // Get type
+            var _dataType = GetDataType(CurrentToken.Type);
+            var _size = GetDataTypeSize(_dataType);
+            var _offset = 0;
+
+            if (scope == VariableScope.MethodParameter)
+            {
+                var paramType = new LinkedListNode<VariableType> { Value = _dataType };
+                paramType.Next = CurrentMethod.ParameterTypes;
+                CurrentMethod.ParameterTypes = paramType;
+            }
+            else if (scope == VariableScope.ClassBody)
+            {
+                CurrentClass.SizeOfLocal += _size;
+            }
+            else if (scope == VariableScope.MethodBody)
+            {
+                CurrentMethod.SizeOfLocal += _size;
+                _offset = Offset;
+                Offset += _size;
+            }
+
+            // Insert formal parameter
+            SymbolTable.Insert(identifier, Depth);
+
+            //TODO: FIX OFFSET
+
+            // Set content
+            SymbolTable.Lookup(identifier.Lexeme).Content = new VariableEntry
+            {
+                DataType = _dataType,
+                Offset = _offset,
+                Size = _size
+            };
+        }
+
+        private void InsertMethod(TokenType returnType, Token identifier)
+        {
+            // Get type
+            var _returnType = GetDataType(CurrentToken.Type);
+
+            // Insert formal parameter
+            SymbolTable.Insert(identifier, Depth);
+
+            CurrentMethod = new MethodEntry
+            {
+                NumberOfParameters = 0,
+                ParameterTypes = null,
+                ReturnType = _returnType,
+                SizeOfLocal = 0
+            };
+
+            // Set content
+            SymbolTable.Lookup(identifier.Lexeme).Content = CurrentMethod;
+
+            var methodName = new LinkedListNode<string> { Value = identifier.Lexeme };
+            methodName.Next = CurrentClass.MethodNames;
+            CurrentClass.MethodNames = methodName;
+        }
+
+        private void InsertClass(Token identifier)
+        {
+            SymbolTable.Insert(identifier, Depth);
+
+            CurrentClass = new ClassEntry
+            {
+                MethodNames = null,
+                VariableNames = null,
+                SizeOfLocal = 0
+            };
+
+            // Set content
+            SymbolTable.Lookup(identifier.Lexeme).Content = CurrentClass;
+        }
+
+        private void InsertConstant(TokenType dataType, Token identifier, string value)
+        {
+            throw new NotImplementedException();
+        }
+
+        private VariableType GetDataType(TokenType type)
+        {
+            switch (type)
+            {
+                case TokenType.Char: return VariableType.Char;
+                case TokenType.Float: return VariableType.Float;
+                case TokenType.Int: return VariableType.Int;
+                case TokenType.Boolean: return VariableType.Boolean;
+            }
+
+            return VariableType.Unkown;
+        }
+
+        private int GetDataTypeSize(VariableType type)
+        {
+            switch (type)
+            {
+                case VariableType.Char: return 1;
+                case VariableType.Float: return 4;
+                case VariableType.Int: return 2;
+                case VariableType.Boolean: return 1;
+            }
+
+            return -1;
         }
     }
 }
