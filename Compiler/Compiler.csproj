@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\Exceptions\DuplicateEntryException.cs" />
     <Compile Include="Models\Exceptions\MissingTokenException.cs" />
     <Compile Include="Models\Table\ClassEntry.cs" />
     <Compile Include="Models\Table\ConstantEntry.cs" />

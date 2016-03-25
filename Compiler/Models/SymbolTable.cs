@@ -1,4 +1,5 @@
-﻿using Compiler.Models.Table;
+﻿using Compiler.Models.Exceptions;
+using Compiler.Models.Table;
 using System;
 
 namespace Compiler.Models
@@ -43,10 +44,16 @@ namespace Compiler.Models
                 }
             };
 
+            // Collision
             if (this._Table[index] != null)
             {
                 // TODO: Check for duplicate, will need depth in lookup
                 // var result = this.Lookup(token.Lexeme);
+
+                if (this.Lookup(token.Lexeme) != null)
+                {
+                    throw new DuplicateEntryException(token.Lexeme);
+                }
 
                 newEntry.Next = this._Table[index];
                 this._Table[index].Previous = newEntry;
