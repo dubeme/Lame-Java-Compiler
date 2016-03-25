@@ -7,12 +7,31 @@ namespace Compiler.Services
     public class SyntaxParserService
     {
         private LexicalAnalyzerService LexicalAnalyzer;
-        private Token NextToken;
-        private bool ReuseOldToken;
+        private SymbolTable SymbolTable;
+
+        private Token _CurrentToken;
+
+        private Token CurrentToken
+        {
+            get
+            {
+                if (_CurrentToken == null)
+                {
+                    throw new Exception("No more token found");
+                }
+
+                return _CurrentToken;
+            }
+            set
+            {
+                _CurrentToken = value;
+            }
+        }
 
         public SyntaxParserService(LexicalAnalyzerService lexAnalyzer)
         {
             this.LexicalAnalyzer = lexAnalyzer;
+            this.SymbolTable = new SymbolTable();
         }
 
         public void Parse()
@@ -34,27 +53,20 @@ namespace Compiler.Services
 
         private void GetNextToken()
         {
-            if (!this.ReuseOldToken)
-            {
-                this.NextToken = this.LexicalAnalyzer.GetNextToken();
-            }
-            else
-            {
-                // Since I only buffer 1 token, this has to be reset
-                // The caller will get the buffered token
-                this.ReuseOldToken = false;
-            }
+            this.CurrentToken = this.LexicalAnalyzer.GetNextToken();
         }
 
         private void Program()
         {
+            GetNextToken();
+
             // Program -> MoreClasses MainClass
             MoreClasses();
             MainClass();
 
             this.GetNextToken();
 
-            if (this.NextToken.Type != TokenType.EndOfFile)
+            if (this.CurrentToken.Type != TokenType.EndOfFile)
             {
                 throw new Exception("Didn't reach end of file, but the program grammar is done matching");
             }
@@ -66,21 +78,24 @@ namespace Compiler.Services
 
             var production = "MoreClasses";
 
-            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Class))
+            if (CurrentToken.Type != TokenType.Class)
             {
-                MatchProductionsNextTokenAs(production, TokenType.Identifier);
-
-                ExtendsClass();
-
-                MatchProductionsNextTokenAs(production, TokenType.OpenCurlyBrace);
-
-                VariableDeclaration();
-                MethodDeclaration();
-
-                MatchProductionsNextTokenAs(production, TokenType.CloseCurlyBrace);
-
-                MoreClasses();
+                return;
             }
+
+            GetNextToken();
+            MatchAndSetToken(production, TokenType.Identifier);
+
+            ExtendsClass();
+
+            MatchAndSetToken(production, TokenType.OpenCurlyBrace);
+
+            VariableDeclaration();
+            MethodDeclaration();
+
+            MatchAndSetToken(production, TokenType.CloseCurlyBrace);
+
+            MoreClasses();
         }
 
         private void ExtendsClass()
@@ -89,9 +104,10 @@ namespace Compiler.Services
             var production = "ClassDeclaration";
 
             // If an extends is matched
-            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Extends))
+            if (this.CurrentToken.Type == TokenType.Extends)
             {
-                MatchProductionsNextTokenAs(production, TokenType.Identifier);
+                GetNextToken();
+                MatchAndSetToken(production, TokenType.Identifier);
             }
         }
 
@@ -101,26 +117,26 @@ namespace Compiler.Services
 
             var production = "MainClass";
 
-            MatchProductionsNextTokenAs(production, TokenType.Final);
-            MatchProductionsNextTokenAs(production, TokenType.Class);
-            MatchProductionsNextTokenAs(production, TokenType.Identifier);
-            MatchProductionsNextTokenAs(production, TokenType.OpenCurlyBrace);
-            MatchProductionsNextTokenAs(production, TokenType.Public);
-            MatchProductionsNextTokenAs(production, TokenType.Static);
-            MatchProductionsNextTokenAs(production, TokenType.Void);
-            MatchProductionsNextTokenAs(production, TokenType.Main);
-            MatchProductionsNextTokenAs(production, TokenType.OpenParen);
-            MatchProductionsNextTokenAs(production, TokenType.String);
-            MatchProductionsNextTokenAs(production, TokenType.OpenSquareBracket);
-            MatchProductionsNextTokenAs(production, TokenType.CloseSquareBracket);
-            MatchProductionsNextTokenAs(production, TokenType.Identifier);
-            MatchProductionsNextTokenAs(production, TokenType.CloseParen);
-            MatchProductionsNextTokenAs(production, TokenType.OpenCurlyBrace);
+            MatchAndSetToken(production, TokenType.Final);
+            MatchAndSetToken(production, TokenType.Class);
+            MatchAndSetToken(production, TokenType.Identifier);
+            MatchAndSetToken(production, TokenType.OpenCurlyBrace);
+            MatchAndSetToken(production, TokenType.Public);
+            MatchAndSetToken(production, TokenType.Static);
+            MatchAndSetToken(production, TokenType.Void);
+            MatchAndSetToken(production, TokenType.Main);
+            MatchAndSetToken(production, TokenType.OpenParen);
+            MatchAndSetToken(production, TokenType.String);
+            MatchAndSetToken(production, TokenType.OpenSquareBracket);
+            MatchAndSetToken(production, TokenType.CloseSquareBracket);
+            MatchAndSetToken(production, TokenType.Identifier);
+            MatchAndSetToken(production, TokenType.CloseParen);
+            MatchAndSetToken(production, TokenType.OpenCurlyBrace);
 
             SequenceofStatements();
 
-            MatchProductionsNextTokenAs(production, TokenType.CloseCurlyBrace);
-            MatchProductionsNextTokenAs(production, TokenType.CloseCurlyBrace);
+            MatchAndSetToken(production, TokenType.CloseCurlyBrace);
+            MatchAndSetToken(production, TokenType.CloseCurlyBrace);
         }
 
         private void VariableDeclaration()
@@ -128,13 +144,14 @@ namespace Compiler.Services
             // VariableDeclaration -> Type IdentifierList ; VariableDeclaration | finalt Type idt = numt; VariableDeclaration | ε
             var production = "VariableDeclaration";
 
-            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Final))
+            if (CurrentToken.Type == TokenType.Final)
             {
+                GetNextToken();
                 Type();
-                MatchProductionsNextTokenAs(production, TokenType.Identifier);
-                MatchProductionsNextTokenAs(production, TokenType.Assignment);
-                MatchProductionsNextTokenAs(production, TokenGroup.Literal);
-                MatchProductionsNextTokenAs(production, TokenType.Semicolon);
+                MatchAndSetToken(production, TokenType.Identifier);
+                MatchAndSetToken(production, TokenType.Assignment);
+                MatchAndSetToken(production, TokenGroup.Literal);
+                MatchAndSetToken(production, TokenType.Semicolon);
                 VariableDeclaration();
             }
             else
@@ -150,7 +167,7 @@ namespace Compiler.Services
                 }
 
                 IdentifierList();
-                MatchProductionsNextTokenAs(production, TokenType.Semicolon);
+                MatchAndSetToken(production, TokenType.Semicolon);
                 VariableDeclaration();
             }
         }
@@ -160,10 +177,11 @@ namespace Compiler.Services
             // IdentifierList -> idt | IdentifierList , idt
             var production = "IdentifierList";
 
-            MatchProductionsNextTokenAs(production, TokenType.Identifier);
+            MatchAndSetToken(production, TokenType.Identifier);
 
-            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Comma))
+            if (CurrentToken.Type == TokenType.Comma)
             {
+                GetNextToken();
                 IdentifierList();
             }
         }
@@ -173,14 +191,16 @@ namespace Compiler.Services
             // Type -> intt | booleant |voidt
             var production = "Type";
 
-            var matchedType =
-                MatchProductionsNextOptionalTokenAs(production, TokenType.Int) ||
-                MatchProductionsNextOptionalTokenAs(production, TokenType.Boolean) ||
-                MatchProductionsNextOptionalTokenAs(production, TokenType.Void);
-
-            if (!matchedType)
+            switch (CurrentToken.Type)
             {
-                throw new MissingTokenException("int|boolean|void", this.NextToken.Type.ToString(), production);
+                case TokenType.Int:
+                case TokenType.Void:
+                case TokenType.Boolean:
+                    GetNextToken();
+                    break;
+
+                default:
+                    throw new MissingTokenException("int|boolean|void", this.CurrentToken.Type.ToString(), production);
             }
         }
 
@@ -189,27 +209,28 @@ namespace Compiler.Services
             // MethodDeclaration -> publict Type idt (FormalParameterList) { VariableDeclaration SequenceofStatements returnt Expression ; } MethodDeclaration | ε
             var production = "MethodDeclaration";
 
-            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Public))
+            if (CurrentToken.Type == TokenType.Public)
             {
+                GetNextToken();
                 Type();
 
-                MatchProductionsNextTokenAs(production, TokenType.Identifier);
-                MatchProductionsNextTokenAs(production, TokenType.OpenParen);
+                MatchAndSetToken(production, TokenType.Identifier);
+                MatchAndSetToken(production, TokenType.OpenParen);
 
                 FormalParameterList();
 
-                MatchProductionsNextTokenAs(production, TokenType.CloseParen);
-                MatchProductionsNextTokenAs(production, TokenType.OpenCurlyBrace);
+                MatchAndSetToken(production, TokenType.CloseParen);
+                MatchAndSetToken(production, TokenType.OpenCurlyBrace);
 
                 VariableDeclaration();
                 SequenceofStatements();
 
-                MatchProductionsNextTokenAs(production, TokenType.Return);
+                MatchAndSetToken(production, TokenType.Return);
 
                 Expression();
 
-                MatchProductionsNextTokenAs(production, TokenType.Semicolon);
-                MatchProductionsNextTokenAs(production, TokenType.CloseCurlyBrace);
+                MatchAndSetToken(production, TokenType.Semicolon);
+                MatchAndSetToken(production, TokenType.CloseCurlyBrace);
 
                 MethodDeclaration();
             }
@@ -230,7 +251,7 @@ namespace Compiler.Services
                 return;
             }
 
-            MatchProductionsNextTokenAs(production, TokenType.Identifier);
+            MatchAndSetToken(production, TokenType.Identifier);
             RestOfFormalParameterList();
         }
 
@@ -239,11 +260,12 @@ namespace Compiler.Services
             // RestOfFormalParameterList -> , Type idt RestOfFormalParameterList | ε
             var production = "RestOfFormalParameterList";
 
-            if (MatchProductionsNextOptionalTokenAs(production, TokenType.Comma))
+            if (CurrentToken.Type == TokenType.Comma)
             {
+                GetNextToken();
                 Type();
 
-                MatchProductionsNextTokenAs(production, TokenType.Identifier);
+                MatchAndSetToken(production, TokenType.Identifier);
                 RestOfFormalParameterList();
             }
         }
@@ -258,38 +280,24 @@ namespace Compiler.Services
             // Expression -> ε
         }
 
-        private void MatchProductionsNextTokenAs(string production, TokenType expectedType)
+        private void MatchAndSetToken(string production, TokenType expectedType)
         {
-            GetNextToken();
-
-            if (this.NextToken.Type != expectedType)
+            if (this.CurrentToken.Type != expectedType)
             {
-                throw new MissingTokenException(expectedType, this.NextToken.Type, production);
+                throw new MissingTokenException(expectedType, this.CurrentToken.Type, production);
             }
+
+            GetNextToken();
         }
 
-        private void MatchProductionsNextTokenAs(string production, TokenGroup expectedGroup)
+        private void MatchAndSetToken(string production, TokenGroup expectedGroup)
         {
-            GetNextToken();
-
-            if (this.NextToken.Group != expectedGroup)
+            if (this.CurrentToken.Group != expectedGroup)
             {
-                throw new MissingTokenException(expectedGroup, this.NextToken.Group, production);
-            }
-        }
-
-        private bool MatchProductionsNextOptionalTokenAs(string production, TokenType expectedType)
-        {
-            GetNextToken();
-
-            if (this.NextToken.Type == expectedType)
-            {
-                this.ReuseOldToken = false;
-                return true;
+                throw new MissingTokenException(expectedGroup, this.CurrentToken.Group, production);
             }
 
-            this.ReuseOldToken = true;
-            return false;
+            GetNextToken();
         }
     }
 }
