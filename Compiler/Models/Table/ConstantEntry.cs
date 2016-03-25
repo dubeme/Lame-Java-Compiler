@@ -6,7 +6,7 @@ namespace Compiler.Models.Table
     ///
     /// </summary>
     /// <seealso cref="Compiler.Models.Table.IContent" />
-    public class ConstantEntry : IContent
+    public class ConstantEntry<T> : IContent
     {
         /// <summary>
         /// Gets or sets the type of this Constant.
@@ -20,6 +20,11 @@ namespace Compiler.Models.Table
         /// Gets or sets the offset of this Constant.
         /// </summary>
         public int Offset { get; set; }
+
+        /// <summary>
+        /// Gets or sets the value of this ConstantEntry{T}.
+        /// </summary>
+        public T Value { get; set; }
 
         /// <summary>
         /// Prints the content using the specified printer.

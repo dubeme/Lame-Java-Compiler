@@ -5,6 +5,7 @@
         Unkown,
         Char,
         Int,
+        Boolean,
         Float
     }
 }
