@@ -19,6 +19,8 @@ namespace Compiler.Models
         /// </summary>
         private readonly LinkedListNode<Entry>[] _Table;
 
+        public Action<object> Printer { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SymbolTable"/> class.
         /// </summary>
@@ -64,11 +66,10 @@ namespace Compiler.Models
         }
 
         /// <summary>
-        /// Writes all the entries at the given depth with the print method.
+        /// Writes all the entries at the given depth to the printer.
         /// </summary>
         /// <param name="depth">The depth.</param>
-        /// <param name="printer">The printer.</param>
-        public void WriteTable(int depth, Action<object> printer)
+        public void WriteTable(int depth)
         {
             for (int index = 0; index < PRIME_TABLE_SIZE; index++)
             {
@@ -77,9 +78,9 @@ namespace Compiler.Models
                 {
                     while (item != null && item.Value.Depth >= depth)
                     {
-                        if (item.Value.Depth == depth)
+                        if (item.Value.Depth == depth && this.Printer != null)
                         {
-                            item.Value.Content.Print(printer);
+                            item.Value.Content.Print(this.Printer);
                         }
 
                         item = item.Next;

@@ -12,6 +12,7 @@ namespace Compiler.Models.Tests
         {
             var count = 0;
             var symTable = new SymbolTable();
+            symTable.Printer = (val) => { count++; };
 
             symTable.Insert(Token.CreateToken("x", 0), 0);
             symTable.Insert(Token.CreateToken("y", 0), 0);
@@ -31,15 +32,15 @@ namespace Compiler.Models.Tests
             symTable.Lookup("y").Content = CreateVariableContent();
             symTable.Lookup("z").Content = CreateVariableContent();
 
-            symTable.WriteTable(0, (val) => { count++; });
+            symTable.WriteTable(0);
             Assert.AreEqual(3, count);
 
             count = 0;
-            symTable.WriteTable(1, (val) => { count++; });
+            symTable.WriteTable(1);
             Assert.AreEqual(4, count);
 
             count = 0;
-            symTable.WriteTable(2, (val) => { count++; });
+            symTable.WriteTable(2);
             Assert.AreEqual(0, count);
         }
 
@@ -49,6 +50,7 @@ namespace Compiler.Models.Tests
         {
             var count = 0;
             var symTable = new SymbolTable();
+            symTable.Printer = (val) => { count++; };
 
             symTable.Insert(Token.CreateToken("a", 0), 0);
             symTable.Insert(Token.CreateToken("b", 0), 0);
@@ -70,36 +72,36 @@ namespace Compiler.Models.Tests
             // Delete depth 9, this should do nothing
             symTable.DeleteDepth(9);
 
-            symTable.WriteTable(0, (val) => { count++; });
-            symTable.WriteTable(1, (val) => { count++; });
-            symTable.WriteTable(2, (val) => { count++; });
+            symTable.WriteTable(0);
+            symTable.WriteTable(1);
+            symTable.WriteTable(2);
             Assert.AreEqual(6, count);
 
             // Delete depth 1, 3 items should be deleted
             symTable.DeleteDepth(1);
 
             count = 0;
-            symTable.WriteTable(0, (val) => { count++; });
-            symTable.WriteTable(1, (val) => { count++; });
-            symTable.WriteTable(2, (val) => { count++; });
+            symTable.WriteTable(0);
+            symTable.WriteTable(1);
+            symTable.WriteTable(2);
             Assert.AreEqual(3, count);
 
             // Delete depth 0, 2 items should be deleted
             symTable.DeleteDepth(0);
 
             count = 0;
-            symTable.WriteTable(0, (val) => { count++; });
-            symTable.WriteTable(1, (val) => { count++; });
-            symTable.WriteTable(2, (val) => { count++; });
+            symTable.WriteTable(0);
+            symTable.WriteTable(1);
+            symTable.WriteTable(2);
             Assert.AreEqual(1, count);
 
             // Try deleting depth 0 again. This should have no effect
             symTable.DeleteDepth(0);
 
             count = 0;
-            symTable.WriteTable(0, (val) => { count++; });
-            symTable.WriteTable(1, (val) => { count++; });
-            symTable.WriteTable(2, (val) => { count++; });
+            symTable.WriteTable(0);
+            symTable.WriteTable(1);
+            symTable.WriteTable(2);
             Assert.AreEqual(1, count);
         }
 
