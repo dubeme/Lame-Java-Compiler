@@ -93,16 +93,26 @@ namespace Compiler.Services
             }
 
             SetNextToken();
+
+            var identifier = CurrentToken;
+
             MatchAndSetToken(production, TokenType.Identifier);
+            InsertClass(identifier);
 
             ExtendsClass();
 
             MatchAndSetToken(production, TokenType.OpenCurlyBrace);
 
+            // update depth
+            Depth++;
+
             VariableDeclaration();
             MethodDeclaration();
 
             MatchAndSetToken(production, TokenType.CloseCurlyBrace);
+
+            // update depth
+            Depth--;
 
             MoreClasses();
         }
@@ -128,17 +138,28 @@ namespace Compiler.Services
 
             MatchAndSetToken(production, TokenType.Final);
             MatchAndSetToken(production, TokenType.Class);
+
+            var identifier = CurrentToken;
+
             MatchAndSetToken(production, TokenType.Identifier);
+            InsertClass(identifier);
+
             MatchAndSetToken(production, TokenType.OpenCurlyBrace);
             MatchAndSetToken(production, TokenType.Public);
             MatchAndSetToken(production, TokenType.Static);
             MatchAndSetToken(production, TokenType.Void);
+
+            identifier = CurrentToken;
             MatchAndSetToken(production, TokenType.Main);
+            InsertMethod(TokenType.Void, identifier);
+
             MatchAndSetToken(production, TokenType.OpenParen);
             MatchAndSetToken(production, TokenType.String);
             MatchAndSetToken(production, TokenType.OpenSquareBracket);
             MatchAndSetToken(production, TokenType.CloseSquareBracket);
             MatchAndSetToken(production, TokenType.Identifier);
+
+            // TODO: Handle command line argument parsing
             MatchAndSetToken(production, TokenType.CloseParen);
             MatchAndSetToken(production, TokenType.OpenCurlyBrace);
 

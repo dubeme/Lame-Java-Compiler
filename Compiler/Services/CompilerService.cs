@@ -1,6 +1,7 @@
 ﻿using Compiler.Models;
 using System;
 using System.IO;
+using System.Text;
 
 namespace Compiler.Services
 {
@@ -64,6 +65,12 @@ namespace Compiler.Services
                     break;
                 }
             }
+        }
+
+        // 
+        public static StreamReader CreateStreamReaderWith(string content)
+        {
+            return new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(content)));
         }
 
         private static void Print(object obj, ConsoleColor color)
