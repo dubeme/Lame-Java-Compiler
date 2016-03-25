@@ -71,6 +71,7 @@ namespace Compiler.Models
         /// <param name="depth">The depth.</param>
         public void WriteTable(int depth)
         {
+            this.Printer($"Dumping entries at depth [{depth}]\n");
             for (int index = 0; index < PRIME_TABLE_SIZE; index++)
             {
                 var item = this._Table[index];
@@ -84,12 +85,28 @@ namespace Compiler.Models
                             //this.Printer(item.Value.Depth);
                             //this.Printer(item.Value.Type);
 
-                            var str = $"Depth ({item.Value.Depth}), ";
-                            str += $"Type ({item.Value.Type}), ";
-                            str += $"Lexeme ({item.Value.Token.Lexeme})";
+                            //var str = $"Depth ({item.Value.Depth}), ";
+                            //str += $"Type ({item.Value.Type}), ";
+                            //str += $"Lexeme ({item.Value.Token.Lexeme})";
 
-                            this.Printer($"Entry details; {str}");
-                            item.Value.Content.Print(this.Printer);
+                            // this.Printer($"Entry details; {str} - {dump}");
+
+                            var str = $"{item.Value.Type}({item.Value.Token.Lexeme})";
+
+                            if (item.Value.Type == EntryType.Variable)
+                            {
+                                str += $" => ";
+                            }
+                            else
+                            {
+                                str += $"\n";
+                            }
+                            
+
+                            item.Value.Content.Print((dump) =>
+                            {
+                                this.Printer($"{str}{dump}");
+                            });
                         }
 
                         item = item.Next;
