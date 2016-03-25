@@ -89,25 +89,29 @@ namespace Compiler.Services
 
             SetNextToken();
 
+            // Match class name, then insert into symbol table
             var identifier = CurrentToken;
-
             MatchAndSetToken(production, TokenType.Identifier);
             InsertClass(identifier);
 
             ExtendsClass();
-
             MatchAndSetToken(production, TokenType.OpenCurlyBrace);
 
-            // update depth
+            // Update values
             Depth++;
+            Offset++;
 
+            CurrentVariableScope = VariableScope.ClassBody;
             VariableDeclaration();
+
+            CurrentVariableScope = VariableScope.MethodBody;
             MethodDeclaration();
 
             MatchAndSetToken(production, TokenType.CloseCurlyBrace);
 
-            // update depth
+            // Update values
             Depth--;
+            Offset--;
 
             MoreClasses();
         }
@@ -200,7 +204,7 @@ namespace Compiler.Services
         }
 
         private void MethodDeclaration()
-        {
+       { 
             // MethodDeclaration -> publict Type idt (FormalParameterList) { VariableDeclaration SequenceofStatements returnt Expression ; } MethodDeclaration | ε
             var production = "MethodDeclaration";
 
@@ -320,6 +324,9 @@ namespace Compiler.Services
             InsertClass(identifier);
 
             MatchAndSetToken(production, TokenType.OpenCurlyBrace);
+
+
+            Depth++;
             MatchAndSetToken(production, TokenType.Public);
             MatchAndSetToken(production, TokenType.Static);
             MatchAndSetToken(production, TokenType.Void);
@@ -338,10 +345,13 @@ namespace Compiler.Services
             MatchAndSetToken(production, TokenType.CloseParen);
             MatchAndSetToken(production, TokenType.OpenCurlyBrace);
 
+            Depth++;
             SequenceofStatements();
 
             MatchAndSetToken(production, TokenType.CloseCurlyBrace);
             MatchAndSetToken(production, TokenType.CloseCurlyBrace);
+
+            Depth -= 2;
         }
 
         private void SetNextToken()
