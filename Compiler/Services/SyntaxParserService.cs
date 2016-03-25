@@ -64,9 +64,16 @@ namespace Compiler.Services
         {
             SetNextToken();
 
+            Depth = 0;
+            Offset = 0;
+
             // Program -> MoreClasses MainClass
             MoreClasses();
             MainClass();
+
+            Console.WriteLine();
+            SymbolTable.WriteTable(Depth);
+            Depth--;
 
             this.SetNextToken();
 
@@ -109,6 +116,8 @@ namespace Compiler.Services
 
             MatchAndSetToken(production, TokenType.CloseCurlyBrace);
 
+            Console.WriteLine();
+            SymbolTable.WriteTable(Depth);
             // Update values
             Depth--;
             Offset--;
@@ -244,6 +253,8 @@ namespace Compiler.Services
                 MatchAndSetToken(production, TokenType.Semicolon);
                 MatchAndSetToken(production, TokenType.CloseCurlyBrace);
 
+                Console.WriteLine();
+                SymbolTable.WriteTable(Depth);
                 // update depth
                 Depth--;
 
@@ -349,9 +360,16 @@ namespace Compiler.Services
             SequenceofStatements();
 
             MatchAndSetToken(production, TokenType.CloseCurlyBrace);
+
+            Console.WriteLine();
+            SymbolTable.WriteTable(Depth);
+            Depth--;
+
             MatchAndSetToken(production, TokenType.CloseCurlyBrace);
 
-            Depth -= 2;
+            Console.WriteLine();
+            SymbolTable.WriteTable(Depth);
+            Depth--;
         }
 
         private void SetNextToken()
@@ -382,7 +400,7 @@ namespace Compiler.Services
         private void InsertVariable(TokenType dataType, Token identifier, VariableScope scope)
         {
             // Get type
-            var _dataType = GetDataType(CurrentToken.Type);
+            var _dataType = GetDataType(dataType);
             var _size = GetDataTypeSize(_dataType);
             var _offset = 0;
 
@@ -391,6 +409,7 @@ namespace Compiler.Services
                 var paramType = new LinkedListNode<VariableType> { Value = _dataType };
                 paramType.Next = CurrentMethod.ParameterTypes;
                 CurrentMethod.ParameterTypes = paramType;
+                CurrentMethod.NumberOfParameters++;
             }
             else if (scope == VariableScope.ClassBody)
             {
@@ -406,10 +425,9 @@ namespace Compiler.Services
             // Insert formal parameter
             SymbolTable.Insert(identifier, Depth);
 
-            //TODO: FIX OFFSET
-
-            // Set content
-            SymbolTable.Lookup(identifier.Lexeme).Content = new VariableEntry
+            var entry = SymbolTable.Lookup(identifier.Lexeme);
+            entry.Type = EntryType.Variable;
+            entry.Content = new VariableEntry
             {
                 DataType = _dataType,
                 Offset = _offset,
@@ -420,10 +438,7 @@ namespace Compiler.Services
         private void InsertMethod(TokenType returnType, Token identifier)
         {
             // Get type
-            var _returnType = GetDataType(CurrentToken.Type);
-
-            // Insert formal parameter
-            SymbolTable.Insert(identifier, Depth);
+            var _returnType = GetDataType(returnType);
 
             CurrentMethod = new MethodEntry
             {
@@ -433,9 +448,14 @@ namespace Compiler.Services
                 SizeOfLocal = 0
             };
 
-            // Set content
-            SymbolTable.Lookup(identifier.Lexeme).Content = CurrentMethod;
+            // Insert formal parameter
+            SymbolTable.Insert(identifier, Depth);
 
+            var entry = SymbolTable.Lookup(identifier.Lexeme);
+            entry.Type = EntryType.Function;
+            entry.Content = CurrentMethod;
+
+            // Add method name to class
             var methodName = new LinkedListNode<string> { Value = identifier.Lexeme };
             methodName.Next = CurrentClass.MethodNames;
             CurrentClass.MethodNames = methodName;
@@ -443,17 +463,18 @@ namespace Compiler.Services
 
         private void InsertClass(Token identifier)
         {
-            SymbolTable.Insert(identifier, Depth);
-
             CurrentClass = new ClassEntry
             {
                 MethodNames = null,
-                VariableNames = null,
+                Fields = null,
                 SizeOfLocal = 0
             };
 
-            // Set content
-            SymbolTable.Lookup(identifier.Lexeme).Content = CurrentClass;
+            SymbolTable.Insert(identifier, Depth);
+
+            var entry = SymbolTable.Lookup(identifier.Lexeme);
+            entry.Type = EntryType.Class;
+            entry.Content = CurrentClass;
         }
 
         private void InsertConstant(TokenType dataType, Token identifier, string value)
@@ -469,6 +490,7 @@ namespace Compiler.Services
                 case TokenType.Float: return VariableType.Float;
                 case TokenType.Int: return VariableType.Int;
                 case TokenType.Boolean: return VariableType.Boolean;
+                case TokenType.Void: return VariableType.Void;
             }
 
             return VariableType.Unkown;

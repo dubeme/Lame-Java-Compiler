@@ -14,8 +14,10 @@ namespace Compiler
             }
 
             var compiler = new CompilerService();
-            compiler.Compile(args[0]);
+            //compiler.Compile(args[0]);
 
+
+            CompilerService.Test();
             Console.WriteLine($"\n\nAll done.\nPlease press enter to continue ... ");
             Console.ReadLine();
         }
