@@ -6,6 +6,7 @@
         Char,
         Int,
         Boolean,
-        Float
+        Float,
+        Void
     }
 }
