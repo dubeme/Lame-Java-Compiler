@@ -52,7 +52,7 @@ namespace Compiler.Models.Table
 
             if (this.MethodNames == null)
             {
-                str.AppendLine($"{tab}Contains no methods");
+                str.Append($"{tab}Contains no methods");
             }
             else
             {
@@ -60,7 +60,7 @@ namespace Compiler.Models.Table
                 var methodNames = this.MethodNames;
                 while (methodNames != null)
                 {
-                    str.AppendLine($"{tab}{tab}{methodNames.Value}");
+                    str.Append($"{tab}{tab}{methodNames.Value}");
                     methodNames = methodNames.Next;
                 }
             }

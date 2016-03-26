@@ -67,7 +67,7 @@ namespace Compiler.Models.Table
             }
 
             str.AppendLine($"{tab}Number of parameters - {this.NumberOfParameters}");
-            str.AppendLine($"{tab}Size of local variables - {this.SizeOfLocal}");
+            str.Append($"{tab}Size of local variables - {this.SizeOfLocal}");
 
             printer(str);
         }
