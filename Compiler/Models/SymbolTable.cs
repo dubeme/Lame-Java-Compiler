@@ -71,7 +71,6 @@ namespace Compiler.Models
         /// <param name="depth">The depth.</param>
         public void WriteTable(int depth)
         {
-            this.Printer($"Dumping entries at depth [{depth}]\n");
             for (int index = 0; index < PRIME_TABLE_SIZE; index++)
             {
                 var item = this._Table[index];
