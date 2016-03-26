@@ -82,11 +82,6 @@ namespace Compiler.Services.Tests
         {
             var parser = CreateSyntaxParserService(testString4);
 
-        [TestMethod()]
-        [TestCategory("Syntax Tree Parser")]
-        public void TestClassWithFieldsAndMethods()
-        {
-            var parser = CreateSyntaxParserService(classWithFieldsAndMethods);
             parser.Parse();
         }
 
@@ -96,20 +91,15 @@ namespace Compiler.Services.Tests
         {
             var parser = CreateSyntaxParserService(testString5);
 
-        [TestMethod()]
-        [TestCategory("Syntax Tree Parser")]
-        public void TestClassWithConstant()
-        {
-            var parser = CreateSyntaxParserService(classWithConstant);
             parser.Parse();
         }
 
         private SyntaxParserService CreateSyntaxParserService(string data)
         {
+
             var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(data);
             var lexAnalyzer = new LexicalAnalyzerService(streamReader);
             var symbolTable = new SymbolTable();
-            symbolTable.Printer = (dump) => { };
 
             return new SyntaxParserService(lexAnalyzer, symbolTable);
         }
