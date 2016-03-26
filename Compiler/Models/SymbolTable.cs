@@ -81,32 +81,7 @@ namespace Compiler.Models
                     {
                         if (item.Value.Depth == depth && this.Printer != null)
                         {
-                            //this.Printer(item.Value.Token.Lexeme);
-                            //this.Printer(item.Value.Depth);
-                            //this.Printer(item.Value.Type);
-
-                            //var str = $"Depth ({item.Value.Depth}), ";
-                            //str += $"Type ({item.Value.Type}), ";
-                            //str += $"Lexeme ({item.Value.Token.Lexeme})";
-
-                            // this.Printer($"Entry details; {str} - {dump}");
-
-                            var str = $"{item.Value.Type}({item.Value.Token.Lexeme})";
-
-                            if (item.Value.Type == EntryType.Variable)
-                            {
-                                str += $" => ";
-                            }
-                            else
-                            {
-                                str += $"\n";
-                            }
-                            
-
-                            item.Value.Content.Print((dump) =>
-                            {
-                                this.Printer($"{str}{dump}");
-                            });
+                            item.Value.Content.Print(item.Value.Token.Lexeme, this.Printer);
                         }
 
                         item = item.Next;
