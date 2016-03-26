@@ -192,7 +192,7 @@ namespace Compiler.Services
 
         private void Type()
         {
-            // Type -> intt | booleant |voidt
+            // Type -> intt | booleant |voidt | floatt
             var production = "Type";
 
             switch (CurrentToken.Type)
@@ -200,11 +200,12 @@ namespace Compiler.Services
                 case TokenType.Int:
                 case TokenType.Void:
                 case TokenType.Boolean:
+                case TokenType.Float:
                     SetNextToken();
                     break;
 
                 default:
-                    throw new MissingTokenException("int|boolean|void", this.CurrentToken.Type.ToString(), production);
+                    throw new MissingTokenException("int|boolean|void|float", this.CurrentToken.Type.ToString(), production);
             }
         }
 
@@ -507,6 +508,7 @@ namespace Compiler.Services
         private void PerformScopeExitAction()
         {
             Console.WriteLine();
+            Console.WriteLine($"Dumping entries at depth [{Depth}]\n");
             SymbolTable.WriteTable(Depth);
             SymbolTable.DeleteDepth(Depth);
             Depth--;
