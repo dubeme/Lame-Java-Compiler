@@ -97,16 +97,15 @@ namespace Compiler.Services
             SetNextToken();
 
             // Match class name, then insert into symbol table
-            var identifier = CurrentToken;
+            var classIdentifier = CurrentToken;
             MatchAndSetToken(production, TokenType.Identifier);
-            InsertClass(identifier);
+            InsertClass(classIdentifier);
 
             ExtendsClass();
             MatchAndSetToken(production, TokenType.OpenCurlyBrace);
 
             // Update values
             Depth++;
-            Offset++;
 
             CurrentVariableScope = VariableScope.ClassBody;
             VariableDeclaration();
@@ -116,11 +115,8 @@ namespace Compiler.Services
 
             MatchAndSetToken(production, TokenType.CloseCurlyBrace);
 
-            Console.WriteLine();
-            SymbolTable.WriteTable(Depth);
-            // Update values
-            Depth--;
-            Offset--;
+            // Exit current scope
+            PerformScopeExitAction();
 
             MoreClasses();
         }
@@ -253,13 +249,8 @@ namespace Compiler.Services
                 MatchAndSetToken(production, TokenType.Semicolon);
                 MatchAndSetToken(production, TokenType.CloseCurlyBrace);
 
-                Console.WriteLine();
-                SymbolTable.WriteTable(Depth);
-                // update depth
-                Depth--;
-
-                // reset offset
-                Offset = 0;
+                // Exit current scope
+                PerformScopeExitAction();
 
                 MethodDeclaration();
             }
@@ -361,16 +352,13 @@ namespace Compiler.Services
 
             MatchAndSetToken(production, TokenType.CloseCurlyBrace);
 
-            Console.WriteLine();
-            SymbolTable.WriteTable(Depth);
-            Depth--;
+            PerformScopeExitAction();
 
             MatchAndSetToken(production, TokenType.CloseCurlyBrace);
 
-            Console.WriteLine();
-            SymbolTable.WriteTable(Depth);
-            Depth--;
+            PerformScopeExitAction();
         }
+
 
         private void SetNextToken()
         {
@@ -409,11 +397,17 @@ namespace Compiler.Services
                 var paramType = new LinkedListNode<VariableType> { Value = _dataType };
                 paramType.Next = CurrentMethod.ParameterTypes;
                 CurrentMethod.ParameterTypes = paramType;
+
                 CurrentMethod.NumberOfParameters++;
             }
             else if (scope == VariableScope.ClassBody)
             {
+                var field = new LinkedListNode<string> { Value = identifier.Lexeme};
+                field.Next = CurrentClass.Fields;
+                CurrentClass.Fields = field;
+
                 CurrentClass.SizeOfLocal += _size;
+                
             }
             else if (scope == VariableScope.MethodBody)
             {
@@ -507,6 +501,15 @@ namespace Compiler.Services
             }
 
             return -1;
+        }
+
+
+        private void PerformScopeExitAction()
+        {
+            Console.WriteLine();
+            SymbolTable.WriteTable(Depth);
+            SymbolTable.DeleteDepth(Depth);
+            Depth--;
         }
     }
 }
