@@ -35,26 +35,40 @@ namespace Compiler.Models.Table
         /// <summary>
         /// Prints the content using the specified printer.
         /// </summary>
+        /// <param name="lexeme">The lexeme.</param>
         /// <param name="printer">The printer.</param>
-        public void Print(Action<object> printer)
+        public void Print(string lexeme, Action<object> printer)
         {
             var str = new StringBuilder();
             var tab = "    ";
 
-            str.AppendLine($"Return type - {this.ReturnType}");
-            str.AppendLine($"Number of parameters - {this.NumberOfParameters}");
-            str.AppendLine($"Size of local variables - {this.SizeOfLocal}");
+            str.Append($"{this.ReturnType} {lexeme}");
 
             if (this.ParameterTypes != null)
             {
                 var paramsTypes = this.ParameterTypes;
+
+                str.Append($"(");
                 while (paramsTypes != null)
                 {
-                    str.AppendLine($"{tab}{paramsTypes.Value}");
+                    str.Append($"{paramsTypes.Value}");
                     paramsTypes = paramsTypes.Next;
+
+                    if (paramsTypes != null)
+                    {
+                        str.Append(", ");
+                    }
                 }
+                str.AppendLine($")");
             }
-            
+            else
+            {
+                str.AppendLine("()");
+            }
+
+            str.AppendLine($"{tab}Number of parameters - {this.NumberOfParameters}");
+            str.AppendLine($"{tab}Size of local variables - {this.SizeOfLocal}");
+
             printer(str);
         }
     }

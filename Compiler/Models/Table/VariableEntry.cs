@@ -26,14 +26,16 @@ namespace Compiler.Models.Table
         /// Gets or sets the size of this Variable.
         /// </summary>
         public int Size { get; set; }
-        
+
         /// <summary>
         /// Prints the content using the specified printer.
         /// </summary>
+        /// <param name="lexeme">The lexeme.</param>
         /// <param name="printer">The printer.</param>
-        public void Print(Action<object> printer)
+        public void Print(string lexeme, Action<object> printer)
         {
-            printer($"{this.DataType, -10} {this.Offset,-10} {this.Size,-10}");
+            var _offset = $"Offset({this.Offset})";
+            printer($"{this.DataType} {lexeme,-10} {_offset,-15}  {"Size"} ({this.Size} Byte(s))");
         }
     }
 }

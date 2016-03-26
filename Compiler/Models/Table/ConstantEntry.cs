@@ -3,8 +3,9 @@
 namespace Compiler.Models.Table
 {
     /// <summary>
-    ///
+    /// 
     /// </summary>
+    /// <typeparam name="T"></typeparam>
     /// <seealso cref="Compiler.Models.Table.IContent" />
     public class ConstantEntry<T> : IContent
     {
@@ -29,10 +30,11 @@ namespace Compiler.Models.Table
         /// <summary>
         /// Prints the content using the specified printer.
         /// </summary>
+        /// <param name="lexeme">The lexeme.</param>
         /// <param name="printer">The printer.</param>
-        public void Print(Action<object> printer)
+        public void Print(string lexeme, Action<object> printer)
         {
-            printer($"{this.DataType,-10} {this.Offset,-10}");
+            printer($"{this.DataType} {lexeme,-10} {this.Offset,-10}");
         }
     }
 }

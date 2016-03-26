@@ -27,39 +27,40 @@ namespace Compiler.Models.Table
         /// <summary>
         /// Prints the content using the specified printer.
         /// </summary>
+        /// <param name="lexeme">The lexeme.</param>
         /// <param name="printer">The printer.</param>
-        public void Print(Action<object> printer)
+        public void Print(string lexeme, Action<object> printer)
         {
-            var str = new StringBuilder();
+            var str = new StringBuilder($"class {lexeme} {{}}\n");
             var tab = "    ";
 
             if (this.Fields == null)
             {
-                str.AppendLine("Class contains no fields");
+                str.AppendLine($"{tab}Contains no fields");
             }
             else
             {
-                str.AppendLine($"Total size of the class fields - {this.SizeOfLocal}");
-                str.AppendLine("Fields");
+                str.AppendLine($"{tab}Total size of the class fields - {this.SizeOfLocal}");
+                str.AppendLine($"{tab}Fields");
                 var fields = this.Fields;
                 while (fields != null)
                 {
-                    str.AppendLine($"{tab}{fields.Value}");
+                    str.AppendLine($"{tab}{tab}{fields.Value}");
                     fields = fields.Next;
                 }
             }
 
             if (this.MethodNames == null)
             {
-                str.AppendLine("Class contains no methods");
+                str.AppendLine($"{tab}Contains no methods");
             }
             else
             {
-                str.AppendLine("Methods");
+                str.AppendLine($"{tab}Methods");
                 var methodNames = this.MethodNames;
                 while (methodNames != null)
                 {
-                    str.AppendLine($"{tab}{methodNames.Value}");
+                    str.AppendLine($"{tab}{tab}{methodNames.Value}");
                     methodNames = methodNames.Next;
                 }
             }
