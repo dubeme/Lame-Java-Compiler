@@ -75,7 +75,7 @@ namespace Compiler.Services
             }
         }
 
-        public static void Test(string str)
+        public static void CompileString(string str)
         {
             try
             {

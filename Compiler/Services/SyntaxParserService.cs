@@ -64,16 +64,14 @@ namespace Compiler.Services
         {
             SetNextToken();
 
-            Depth = 0;
+            Depth = 1;
             Offset = 0;
 
             // Program -> MoreClasses MainClass
             MoreClasses();
             MainClass();
 
-            Console.WriteLine();
-            SymbolTable.WriteTable(Depth);
-            Depth--;
+            PerformScopeExitAction();
 
             this.SetNextToken();
 

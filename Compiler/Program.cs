@@ -113,8 +113,26 @@ namespace Compiler
             var compiler = new CompilerService();
             //compiler.Compile(args[0]);
 
+            var codeSamples = new string[] {
+                justMain,
+                main1Class,
+                main2Classes,
+                classWithFields,
+                classWithFieldsAndMethod,
+                classWithFieldsAndMethods,
+                classWithFieldsMethodsParameters,
+                classWithConstant
+            };
 
-            CompilerService.Test(justMain);
+            foreach (var code in codeSamples)
+            {
+                Console.WriteLine(code);
+                CompilerService.CompileString(code);
+                Console.WriteLine($"\n\nPlease press enter to continue ... ");
+                Console.ReadLine();
+                Console.Clear();
+            }
+
             Console.WriteLine($"\n\nAll done.\nPlease press enter to continue ... ");
             Console.ReadLine();
         }
