@@ -75,66 +75,26 @@ namespace Compiler.Services
             }
         }
 
-        public static void Test()
+        public static void Test(string str)
         {
-            var vals = new String[]{
-                @"final class Main {public static void main(String[] args){}}",
-
-                @"class tim { int x, y, z;}
-                final class Main {public static void main(String[] args){}}",
-
-                @"class tim {
-                    int x, y, z;
-                    public void ass(int a, int b, int c){ return;}
-                }
-                final class Main {public static void main(String[] args){}}",
-
-                @"class one {} class two{}
-                final class Main
-                {
-                    public static void main(String[] args)
-                    {
-                    }
-                }",
-
-                @"class One
-                {
-                    int erer;
-                    final int kl = 2;
-                    public void func(){ return ;}
-                }
-                class Two
-                {
-                    int a;
-                    boolean b;
-                } final class Main {
-                    public static void main(String[] args)
-                    {
-                    }
-                }"
-            };
-
-            foreach (var str in vals)
+            try
             {
-                try
+                var memStream = new MemoryStream(Encoding.UTF8.GetBytes(str));
+                var streamReader = new StreamReader(memStream);
+                var lexAnalyzer = new LexicalAnalyzerService(streamReader);
+                var symbolTable = new SymbolTable
                 {
-                    var memStream = new MemoryStream(Encoding.UTF8.GetBytes(str));
-                    var streamReader = new StreamReader(memStream);
-                    var lexAnalyzer = new LexicalAnalyzerService(streamReader);
-                    var symbolTable = new SymbolTable
-                    {
-                        Printer = Console.WriteLine
-                    };
+                    Printer = Console.WriteLine
+                };
 
-                    var syntaxParser = new SyntaxParserService(lexAnalyzer, symbolTable);
+                var syntaxParser = new SyntaxParserService(lexAnalyzer, symbolTable);
 
-                    syntaxParser.Parse();
-                }
-                catch (Exception ex)
-                {
-                    Print("Oops, there seems to be something wrong.\n\n", ErrorColor);
-                    Print(ex.Message, ErrorColor);
-                }
+                syntaxParser.Parse();
+            }
+            catch (Exception ex)
+            {
+                Print("Oops, there seems to be something wrong.\n\n", ErrorColor);
+                Print(ex.Message, ErrorColor);
             }
         }
 
