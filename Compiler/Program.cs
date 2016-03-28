@@ -91,6 +91,32 @@ namespace Compiler
                 }
             }";
 
+        private static string classWithFieldsMethodsParametersAndLocals = @"
+            class tim {
+                int x, y, z;
+                boolean a, b, c;
+                public void ass(){
+                    return;
+                }
+                public int kit(int x, int y, boolean z){
+                    int a,b,c;
+                    return ;
+                }
+                public boolean sum(float num, int ans){
+                    float x,y,z;
+                    int a;
+                    boolean k;
+                    return ;
+                }
+                public float jamb(float num){
+                    return ;
+                }
+            }
+            final class Main {
+                public static void main(String[] args){
+                }
+            }";
+
         private static string classWithConstant = @"
             class two{
                 final boolean BOOL = false;
@@ -121,6 +147,7 @@ namespace Compiler
                 classWithFieldsAndMethod,
                 classWithFieldsAndMethods,
                 classWithFieldsMethodsParameters,
+                classWithFieldsMethodsParametersAndLocals,
                 classWithConstant
             };
 
