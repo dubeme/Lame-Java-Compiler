@@ -105,6 +105,9 @@ namespace Compiler.Services
             // Update values
             Depth++;
 
+            // reset offset
+            Offset = 0;
+
             CurrentVariableScope = VariableScope.ClassBody;
             VariableDeclaration();
 
@@ -406,6 +409,8 @@ namespace Compiler.Services
                 CurrentClass.Fields = field;
 
                 CurrentClass.SizeOfLocal += _size;
+                _offset = Offset;
+                Offset += _size;
                 
             }
             else if (scope == VariableScope.MethodBody)
