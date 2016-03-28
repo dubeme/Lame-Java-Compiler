@@ -64,7 +64,7 @@ namespace Compiler.Services
         {
             SetNextToken();
 
-            Depth = 1;
+            Depth = 0;
             Offset = 0;
 
             // Program -> MoreClasses MainClass
@@ -152,7 +152,6 @@ namespace Compiler.Services
                 MatchAndSetToken(production, TokenType.Assignment);
 
                 var value = CurrentToken.Lexeme;
-
                 if (dataType == TokenType.Boolean)
                 {
                     MatchAndSetToken(production, TokenGroup.ReservedWord);
@@ -162,8 +161,7 @@ namespace Compiler.Services
                     MatchAndSetToken(production, TokenGroup.Literal);
                 }
 
-                // InsertConstant(dataType, identifier, value);
-                InsertVariable(dataType, identifier, CurrentVariableScope);
+                InsertVariable(dataType, identifier, true, value);
             }
             else
             {
@@ -191,7 +189,7 @@ namespace Compiler.Services
             var identifier = CurrentToken;
 
             MatchAndSetToken(production, TokenType.Identifier);
-            InsertVariable(CurrentDataType, identifier, CurrentVariableScope);
+            InsertVariable(CurrentDataType, identifier);
 
             if (CurrentToken.Type == TokenType.Comma)
             {
@@ -242,6 +240,7 @@ namespace Compiler.Services
 
                 MatchAndSetToken(production, TokenType.OpenParen);
 
+                CurrentVariableScope = VariableScope.MethodParameter;
                 FormalParameterList();
 
                 MatchAndSetToken(production, TokenType.CloseParen);
@@ -249,6 +248,7 @@ namespace Compiler.Services
 
                 // reset offset
                 Offset = 0;
+                CurrentVariableScope = VariableScope.MethodBody;
 
                 VariableDeclaration();
                 SequenceofStatements();
@@ -286,7 +286,7 @@ namespace Compiler.Services
             var identifier = CurrentToken;
             MatchAndSetToken(production, TokenType.Identifier);
 
-            InsertVariable(dataType, identifier, VariableScope.MethodParameter);
+            InsertVariable(dataType, identifier);
             RestOfFormalParameterList();
         }
 
@@ -306,7 +306,7 @@ namespace Compiler.Services
 
                 MatchAndSetToken(production, TokenType.Identifier);
 
-                InsertVariable(dataType, identifier, VariableScope.MethodParameter);
+                InsertVariable(dataType, identifier);
 
                 RestOfFormalParameterList();
             }
@@ -394,14 +394,15 @@ namespace Compiler.Services
             SetNextToken();
         }
 
-        private void InsertVariable(TokenType dataType, Token identifier, VariableScope scope)
+        private void InsertVariable(TokenType dataType, Token identifier, bool isConstant = false, string value = "")
         {
             // Get type
             var _dataType = GetDataType(dataType);
             var _size = GetDataTypeSize(_dataType);
             var _offset = 0;
+            var _scope = CurrentVariableScope;
 
-            if (scope == VariableScope.MethodParameter)
+            if (_scope == VariableScope.MethodParameter)
             {
                 var paramType = new LinkedListNode<VariableType> { Value = _dataType };
                 paramType.Next = CurrentMethod.ParameterTypes;
@@ -409,7 +410,7 @@ namespace Compiler.Services
 
                 CurrentMethod.NumberOfParameters++;
             }
-            else if (scope == VariableScope.ClassBody)
+            else if (_scope == VariableScope.ClassBody)
             {
                 var field = new LinkedListNode<string> { Value = identifier.Lexeme };
                 field.Next = CurrentClass.Fields;
@@ -419,7 +420,7 @@ namespace Compiler.Services
                 _offset = Offset;
                 Offset += _size;
             }
-            else if (scope == VariableScope.MethodBody)
+            else if (_scope == VariableScope.MethodBody)
             {
                 CurrentMethod.SizeOfLocal += _size;
                 _offset = Offset;
@@ -430,19 +431,27 @@ namespace Compiler.Services
             SymbolTable.Insert(identifier, Depth);
 
             var entry = SymbolTable.Lookup(identifier.Lexeme);
-            entry.Type = EntryType.Variable;
-            entry.Content = new VariableEntry
-            {
-                DataType = _dataType,
-                Offset = _offset,
-                Size = _size
-            };
 
-            var constEntry = new ConstantEntry
+            if (isConstant)
             {
-                DataType = _dataType,
-                Offset = _offset,
-            };
+                entry.Type = EntryType.Constant;
+                entry.Content = new ConstantEntry
+                {
+                    DataType = _dataType,
+                    Offset = _offset,
+                    Value = value
+                };
+            }
+            else
+            {
+                entry.Type = EntryType.Variable;
+                entry.Content = new VariableEntry
+                {
+                    DataType = _dataType,
+                    Offset = _offset,
+                    Size = _size
+                };
+            }
         }
 
         private void InsertMethod(TokenType returnType, Token identifier)
@@ -485,15 +494,6 @@ namespace Compiler.Services
             var entry = SymbolTable.Lookup(identifier.Lexeme);
             entry.Type = EntryType.Class;
             entry.Content = CurrentClass;
-        }
-
-        private void InsertConstant(TokenType dataType, Token identifier, string value)
-        {
-            var constEntry = new ConstantEntry
-            {
-                
-            };
-            throw new NotImplementedException();
         }
 
         private VariableType GetDataType(TokenType type)
