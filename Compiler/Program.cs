@@ -136,28 +136,33 @@ namespace Compiler
                 return;
             }
 
-            var compiler = new CompilerService();
-            //compiler.Compile(args[0]);
-
-            var codeSamples = new string[] {
-                justMain,
-                main1Class,
-                main2Classes,
-                classWithFields,
-                classWithFieldsAndMethod,
-                classWithFieldsAndMethods,
-                classWithFieldsMethodsParameters,
-                classWithFieldsMethodsParametersAndLocals,
-                classWithConstant
-            };
-
-            foreach (var code in codeSamples)
+            if (Environment.GetEnvironmentVariable("dumm", EnvironmentVariableTarget.User) == null)
             {
-                Console.WriteLine(code);
-                CompilerService.CompileString(code);
-                Console.WriteLine($"\n\nPlease press enter to continue ... ");
-                Console.ReadLine();
-                Console.Clear();
+                var compiler = new CompilerService();
+                compiler.Compile(args[0]);
+            }
+            else
+            {
+                var codeSamples = new string[] {
+                    justMain,
+                    main1Class,
+                    main2Classes,
+                    classWithFields,
+                    classWithFieldsAndMethod,
+                    classWithFieldsAndMethods,
+                    classWithFieldsMethodsParameters,
+                    classWithFieldsMethodsParametersAndLocals,
+                    classWithConstant
+                };
+
+                foreach (var code in codeSamples)
+                {
+                    Console.WriteLine(code);
+                    CompilerService.CompileString(code);
+                    Console.WriteLine($"\n\nPlease press enter to continue ... ");
+                    Console.ReadLine();
+                    Console.Clear();
+                }
             }
 
             Console.WriteLine($"\n\nAll done.\nPlease press enter to continue ... ");
