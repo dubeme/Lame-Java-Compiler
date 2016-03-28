@@ -35,7 +35,7 @@ namespace Compiler.Models.Table
         public void Print(string lexeme, Action<object> printer)
         {
             var _offset = $"Offset({this.Offset})";
-            printer($"{this.DataType} {lexeme,-10} {_offset,-15}  {"Size"} ({this.Size} Byte(s))");
+            printer($"{this.DataType, -12} {lexeme,-10} {_offset,-15}  {"Size"} ({this.Size} Byte(s))");
         }
     }
 }

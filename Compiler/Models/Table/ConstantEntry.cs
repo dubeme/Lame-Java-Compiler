@@ -33,7 +33,8 @@ namespace Compiler.Models.Table
         /// <param name="printer">The printer.</param>
         public void Print(string lexeme, Action<object> printer)
         {
-            printer($"{this.DataType} {lexeme,-10} {this.Offset,-10}");
+            var _offset = $"Offset({this.Offset})";
+            printer($"final {this.DataType, -12} {lexeme,-10} {_offset,-15} {this.Value}");
         }
     }
 }
