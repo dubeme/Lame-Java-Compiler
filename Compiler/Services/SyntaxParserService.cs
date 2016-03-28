@@ -152,9 +152,18 @@ namespace Compiler.Services
                 MatchAndSetToken(production, TokenType.Assignment);
 
                 var value = CurrentToken.Lexeme;
-                MatchAndSetToken(production, TokenGroup.Literal);
 
-                InsertConstant(dataType, identifier, value);
+                if (dataType == TokenType.Boolean)
+                {
+                    MatchAndSetToken(production, TokenGroup.ReservedWord);
+                }
+                else
+                {
+                    MatchAndSetToken(production, TokenGroup.Literal);
+                }
+
+                // InsertConstant(dataType, identifier, value);
+                InsertVariable(dataType, identifier, CurrentVariableScope);
             }
             else
             {
@@ -211,7 +220,7 @@ namespace Compiler.Services
         }
 
         private void MethodDeclaration()
-       { 
+        {
             // MethodDeclaration -> publict Type idt (FormalParameterList) { VariableDeclaration SequenceofStatements returnt Expression ; } MethodDeclaration | ε
             var production = "MethodDeclaration";
 
@@ -329,7 +338,6 @@ namespace Compiler.Services
 
             MatchAndSetToken(production, TokenType.OpenCurlyBrace);
 
-
             Depth++;
             MatchAndSetToken(production, TokenType.Public);
             MatchAndSetToken(production, TokenType.Static);
@@ -360,7 +368,6 @@ namespace Compiler.Services
 
             PerformScopeExitAction();
         }
-
 
         private void SetNextToken()
         {
@@ -404,14 +411,13 @@ namespace Compiler.Services
             }
             else if (scope == VariableScope.ClassBody)
             {
-                var field = new LinkedListNode<string> { Value = identifier.Lexeme};
+                var field = new LinkedListNode<string> { Value = identifier.Lexeme };
                 field.Next = CurrentClass.Fields;
                 CurrentClass.Fields = field;
 
                 CurrentClass.SizeOfLocal += _size;
                 _offset = Offset;
                 Offset += _size;
-                
             }
             else if (scope == VariableScope.MethodBody)
             {
@@ -430,6 +436,12 @@ namespace Compiler.Services
                 DataType = _dataType,
                 Offset = _offset,
                 Size = _size
+            };
+
+            var constEntry = new ConstantEntry
+            {
+                DataType = _dataType,
+                Offset = _offset,
             };
         }
 
@@ -477,6 +489,10 @@ namespace Compiler.Services
 
         private void InsertConstant(TokenType dataType, Token identifier, string value)
         {
+            var constEntry = new ConstantEntry
+            {
+                
+            };
             throw new NotImplementedException();
         }
 
@@ -506,7 +522,6 @@ namespace Compiler.Services
 
             return -1;
         }
-
 
         private void PerformScopeExitAction()
         {

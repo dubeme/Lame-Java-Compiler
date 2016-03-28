@@ -5,9 +5,8 @@ namespace Compiler.Models.Table
     /// <summary>
     /// 
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     /// <seealso cref="Compiler.Models.Table.IContent" />
-    public class ConstantEntry<T> : IContent
+    public class ConstantEntry : IContent
     {
         /// <summary>
         /// Gets or sets the type of this Constant.
@@ -23,9 +22,9 @@ namespace Compiler.Models.Table
         public int Offset { get; set; }
 
         /// <summary>
-        /// Gets or sets the value of this ConstantEntry{T}.
+        /// Gets or sets the value of this ConstantEntry.
         /// </summary>
-        public T Value { get; set; }
+        public object Value { get; set; }
 
         /// <summary>
         /// Prints the content using the specified printer.
