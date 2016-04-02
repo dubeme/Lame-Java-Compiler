@@ -336,22 +336,30 @@ namespace Compiler.Services
         private void StatementTail()
         {
             // StatementTail -> Statement StatementTail | ε
+
+            Statement();
+            StatementTail();
         }
 
         private void Statement()
         {
             // Statement -> AssignmentStatement | IOStatement
+            var production = "Statement";
+
+            if (CurrentToken.Type == TokenType.Identifier)
+            {
+                AssignmentStatement();
+            }
+            else
+            {
+                IOStatement();
+            }
         }
 
         private void AssignmentStatement()
         {
             // AssignmentStatement -> idt = Expression
             var production = "AssignmentStatement";
-
-            if (CurrentToken.Type != TokenType.Identifier)
-            {
-                return;
-            }
 
             MatchAndSetToken(production, TokenType.Identifier);
             MatchAndSetToken(production, TokenType.Assignment);
@@ -409,7 +417,7 @@ namespace Compiler.Services
             }
             catch (MissingTokenException)
             {
-                // No AddOperators
+                // ε production
                 return;
             }
 
@@ -454,7 +462,7 @@ namespace Compiler.Services
             {
                 MatchAndSetToken(production, TokenType.False);
             }
-            else
+            else// if (currentTokenType == TokenType.Minus)
             {
                 SignOperator();
                 Factor();
