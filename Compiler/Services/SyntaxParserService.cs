@@ -3,6 +3,7 @@ using Compiler.Models.Exceptions;
 using Compiler.Models.Misc;
 using Compiler.Models.Table;
 using System;
+using System.Linq;
 
 namespace Compiler.Services
 {
@@ -314,12 +315,184 @@ namespace Compiler.Services
 
         private void SequenceofStatements()
         {
-            // SequenceofStatements -> ε
+            // SequenceOfStatements -> Statement ; StatementTail | ε
+
+            var production = "SequenceOfStatements";
+
+            try
+            {
+                Statement();
+            }
+            catch (MissingTokenException)
+            {
+                // ε production
+                return;
+            }
+
+            MatchAndSetToken(production, TokenType.Semicolon);
+            StatementTail();
+        }
+
+        private void StatementTail()
+        {
+            // StatementTail -> Statement StatementTail | ε
+        }
+
+        private void Statement()
+        {
+            // Statement -> AssignmentStatement | IOStatement
+        }
+
+        private void AssignmentStatement()
+        {
+            // AssignmentStatement -> idt = Expression
+            var production = "AssignmentStatement";
+
+            if (CurrentToken.Type != TokenType.Identifier)
+            {
+                return;
+            }
+
+            MatchAndSetToken(production, TokenType.Identifier);
+            MatchAndSetToken(production, TokenType.Identifier);
+            MatchAndSetToken(production, TokenType.Identifier);
+        }
+
+        private void IOStatement()
+        {
+            // IOStatement -> ε
         }
 
         private void Expression()
         {
-            // Expression -> ε
+            // Expression -> Relation | ε
+            try
+            {
+                Relation();
+            }
+            catch (MissingTokenException)
+            {
+                // No Relation
+                return ;
+            }
+        }
+
+        private void Relation()
+        {
+            // Relation -> SimpleExpressionession
+            SimpleExpressionession();
+        }
+
+        private void SimpleExpressionession()
+        {
+            // SimpleExpressionession -> Term MoreTerm
+            Term();
+            MoreTerm();
+        }
+
+        private void Term()
+        {
+            // Term -> Factor MoreFactor
+            Factor();
+            MoreFactor();
+        }
+
+        private void MoreTerm()
+        {
+            // MoreTerm -> AddOperators Term MoreTerm | ε
+
+            try
+            {
+                AddOperators();
+            }
+            catch (MissingTokenException)
+            {
+                // No AddOperators
+                return;
+            }
+
+            Term();
+            MoreTerm();
+        }
+
+        private void Factor()
+        {
+            // Factor -> id | num | ( Expression ) | ! Factor | true | false | SignOperator Factor
+            var production = "Factor";
+            var currentTokenType = CurrentToken.Type;
+
+            if (CurrentToken.Type == TokenType.Identifier)
+            {
+                SetNextToken();
+            }
+            else if (currentTokenType == TokenType.LiteralInteger || currentTokenType == TokenType.LiteralInteger)
+            {
+                SetNextToken();
+            }
+            else if (currentTokenType == TokenType.OpenParen)
+            {
+                SetNextToken();
+                Expression();
+                MatchAndSetToken(production, TokenType.CloseParen);
+            }
+            else if (currentTokenType == TokenType.BooleanNot)
+            {
+                SetNextToken();
+                Factor();
+            }
+            else if (currentTokenType == TokenType.True)
+            {
+                SetNextToken();
+            }
+            else if (currentTokenType == TokenType.False)
+            {
+                SetNextToken();
+            }
+            else
+            {
+                SignOperator();
+                Factor();
+            }
+        }
+
+        private void MoreFactor()
+        {
+            // MoreFactor -> MultiplicationOperators Factor MoreFactor | ε
+            var production = "MoreFactor";
+
+            try
+            {
+                MultiplicationOperators();
+            }
+            catch (MissingTokenException)
+            {
+                // Not MultiplicationOperators
+                return;
+            }
+
+            Factor();
+            MoreFactor();
+        }
+
+        private void AddOperators()
+        {
+            // AddOperators -> + | - | ||
+            var production = "AddOperators";
+            SetTokenWhenMatch(production, TokenType.Plus, TokenType.Minus, TokenType.BooleanOr);
+        }
+
+        private void MultiplicationOperators()
+        {
+            // MultiplicationOperators -> * | / | &&
+            var production = "MultiplicationOperators";
+            SetTokenWhenMatch(production, TokenType.Multiplication, TokenType.Divide, TokenType.BooleanAnd);
+        }
+
+        private void SignOperator()
+        {
+            // SignOperator -> -
+            var production = "SignOperator";
+            MatchAndSetToken(production, TokenType.Minus);
         }
 
         private void MainClass()
@@ -372,6 +545,26 @@ namespace Compiler.Services
         private void SetNextToken()
         {
             this.CurrentToken = this.LexicalAnalyzer.GetNextToken();
+        }
+
+        private void SetTokenWhenMatch(string production, params TokenType[] types)
+        {
+            if (types == null || types.Length < 1)
+            {
+                return;
+            }
+
+            foreach (var type in types)
+            {
+                if (CurrentToken.Type == type)
+                {
+                    SetNextToken();
+                    return;
+                }
+            }
+
+            var expected = string.Join(" | ", types);
+            throw new MissingTokenException(expected, CurrentToken.Type.ToString(), production);
         }
 
         private void MatchAndSetToken(string production, TokenType expectedType)
