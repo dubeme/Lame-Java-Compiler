@@ -354,8 +354,10 @@ namespace Compiler.Services
             }
 
             MatchAndSetToken(production, TokenType.Identifier);
-            MatchAndSetToken(production, TokenType.Identifier);
-            MatchAndSetToken(production, TokenType.Identifier);
+            MatchAndSetToken(production, TokenType.Assignment);
+
+            // TODO: Check if identifier exists
+            Expression();
         }
 
         private void IOStatement()
@@ -379,13 +381,13 @@ namespace Compiler.Services
 
         private void Relation()
         {
-            // Relation -> SimpleExpressionession
-            SimpleExpressionession();
+            // Relation -> SimpleExpression
+            SimpleExpression();
         }
 
-        private void SimpleExpressionession()
+        private void SimpleExpression()
         {
-            // SimpleExpressionession -> Term MoreTerm
+            // SimpleExpression -> Term MoreTerm
             Term();
             MoreTerm();
         }
@@ -423,30 +425,34 @@ namespace Compiler.Services
 
             if (CurrentToken.Type == TokenType.Identifier)
             {
-                SetNextToken();
+                MatchAndSetToken(production, TokenType.Identifier);
             }
-            else if (currentTokenType == TokenType.LiteralInteger || currentTokenType == TokenType.LiteralInteger)
+            else if (currentTokenType == TokenType.LiteralInteger)
             {
-                SetNextToken();
+                MatchAndSetToken(production, TokenType.LiteralInteger);
+            }
+            else if (currentTokenType == TokenType.LiteralReal)
+            {
+                MatchAndSetToken(production, TokenType.LiteralReal);
             }
             else if (currentTokenType == TokenType.OpenParen)
             {
-                SetNextToken();
+                MatchAndSetToken(production, TokenType.OpenParen);
                 Expression();
                 MatchAndSetToken(production, TokenType.CloseParen);
             }
             else if (currentTokenType == TokenType.BooleanNot)
             {
-                SetNextToken();
+                MatchAndSetToken(production, TokenType.BooleanNot);
                 Factor();
             }
             else if (currentTokenType == TokenType.True)
             {
-                SetNextToken();
+                MatchAndSetToken(production, TokenType.True);
             }
             else if (currentTokenType == TokenType.False)
             {
-                SetNextToken();
+                MatchAndSetToken(production, TokenType.False);
             }
             else
             {
