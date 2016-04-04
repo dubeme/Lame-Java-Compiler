@@ -30,6 +30,9 @@ namespace Compiler.Services
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether current token is closed curly braces OR return statement.
+        /// </summary>
         public bool EndOfCodeBlock
         {
             get
@@ -261,9 +264,15 @@ namespace Compiler.Services
                 VariableDeclaration();
                 SequenceofStatements();
 
-                MatchAndSetToken(production, TokenType.Return);
-
-                Expression();
+                if (returnType == TokenType.Void && CurrentToken.Type == TokenType.Return)
+                {
+                    MatchAndSetToken(production, TokenType.Return);
+                }
+                else
+                {
+                    MatchAndSetToken(production, TokenType.Return);
+                    Expression();
+                }
 
                 MatchAndSetToken(production, TokenType.Semicolon);
                 MatchAndSetToken(production, TokenType.CloseCurlyBrace);
@@ -394,7 +403,7 @@ namespace Compiler.Services
             {
                 Relation();
             }
-            catch (MissingTokenException)
+            catch (MissingOptionalTokenException)
             {
                 // No Relation
                 return;
@@ -429,7 +438,7 @@ namespace Compiler.Services
             {
                 AddOperators();
             }
-            catch (MissingTokenException)
+            catch (MissingOptionalTokenException)
             {
                 // ε production
                 return;
@@ -447,7 +456,14 @@ namespace Compiler.Services
 
             if (CurrentToken.Type == TokenType.Identifier)
             {
+                var identifier = CurrentToken.Lexeme;
+
                 MatchAndSetToken(production, TokenType.Identifier);
+
+                if (SymbolTable.Lookup(identifier) == null)
+                {
+                    throw new UndeclaredVariableException(identifier);
+                }
             }
             else if (currentTokenType == TokenType.LiteralInteger)
             {
@@ -492,9 +508,9 @@ namespace Compiler.Services
             {
                 MultiplicationOperators();
             }
-            catch (MissingTokenException)
+            catch (MissingOptionalTokenException)
             {
-                // Not MultiplicationOperators
+                // ε production
                 return;
             }
 
@@ -506,14 +522,14 @@ namespace Compiler.Services
         {
             // AddOperators -> + | - | ||
             var production = "AddOperators";
-            SetTokenWhenMatch(production, TokenType.Plus, TokenType.Minus, TokenType.BooleanOr);
+            SetTokenIfAnyMatch(production, TokenType.Plus, TokenType.Minus, TokenType.BooleanOr);
         }
 
         private void MultiplicationOperators()
         {
             // MultiplicationOperators -> * | / | &&
             var production = "MultiplicationOperators";
-            SetTokenWhenMatch(production, TokenType.Multiplication, TokenType.Divide, TokenType.BooleanAnd);
+            SetTokenIfAnyMatch(production, TokenType.Multiplication, TokenType.Divide, TokenType.BooleanAnd);
         }
 
         private void SignOperator()
@@ -575,7 +591,7 @@ namespace Compiler.Services
             this.CurrentToken = this.LexicalAnalyzer.GetNextToken();
         }
 
-        private void SetTokenWhenMatch(string production, params TokenType[] types)
+        private void SetTokenIfAnyMatch(string production, params TokenType[] types)
         {
             if (types == null || types.Length < 1)
             {
@@ -592,7 +608,7 @@ namespace Compiler.Services
             }
 
             var expected = string.Join(" | ", types);
-            throw new MissingTokenException(expected, CurrentToken.Type.ToString(), production);
+            throw new MissingOptionalTokenException(expected, CurrentToken.Type.ToString(), production);
         }
 
         private void MatchAndSetToken(string production, TokenType expectedType)

@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\Exceptions\DuplicateEntryException.cs" />
+    <Compile Include="Models\Exceptions\MissingOptionalTokenException.cs" />
     <Compile Include="Models\Exceptions\MissingTokenException.cs" />
     <Compile Include="Models\Misc\VariableScope.cs" />
     <Compile Include="Models\Table\ClassEntry.cs" />
@@ -68,6 +69,7 @@
     <Compile Include="Services\CompilerService.cs" />
     <Compile Include="Services\LexicalAnalyzerService.cs" />
     <Compile Include="Services\SyntaxParserService.cs" />
+    <Compile Include="Models\Exceptions\UndeclaredVariableException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

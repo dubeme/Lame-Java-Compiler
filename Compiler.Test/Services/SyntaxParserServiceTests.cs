@@ -1,5 +1,6 @@
 ﻿using Compiler.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 
 namespace Compiler.Services.Tests
 {
@@ -164,6 +165,88 @@ namespace Compiler.Services.Tests
                 }
             }";
 
+        private const string classWithExpressionBasic = @"
+            class calculator {
+                public void func(){
+                    int var_int;
+                    float var_float;
+                    boolean var_boolean;
+                    
+                    var_int = 9;
+                    var_float = 3.14;
+                    var_boolean = false;
+                    return ;
+                }
+            }
+            final class Main {
+                public static void main(String[] args){
+                }
+            }";
+        private const string classWithExpressionSimpleArithmetic = @"
+            class calculator {
+                int x, y, z;
+                public void func(int a, int b){
+                    float ans; 
+                    ans = 3.14 * 5 * 5 + 5.3434 - 65.09909;
+                    return;
+                }
+            }
+            final class Main {
+                public static void main(String[] args){
+                }
+            }";
+        private const string classWithExpressionBoolean = @"
+            class calculator {
+                public int func(int a, int b){
+                    boolean ans;
+                    ans = !false;
+                    ans = !!true;
+                    ans = (!true);
+                    return ans;
+                }
+            }
+            final class Main {
+                public static void main(String[] args){
+                }
+            }";
+        private const string classWithExpressionPemdas = @"
+            class calculator {
+                public int func(int a, int b){
+                    int ans;
+                    ans = (-2)+(3*4)-(a);
+                    return ans;
+                }
+            }
+            final class Main {
+                public static void main(String[] args){
+                }
+            }";
+        private const string classWithExpressionUndeclared1 = @"
+            class calculator {
+                int x, y, z;
+                public int func(int a, int b){
+                    int ans;
+                    ans = (3)/(a/b*c)+(13);
+                    return ans;
+                }
+            }
+            final class Main {
+                public static void main(String[] args){
+                }
+            }";
+        private const string classWithExpressionUndeclared2 = @"
+            class calculator {
+                public int func(int a, int b){
+                    int ans;
+                    var_ans = (3)/(a/b*)+(13);
+                    return ans;
+                }
+            }
+            final class Main {
+                public static void main(String[] args){
+                }
+            }";
+
         [TestMethod()]
         [TestCategory("Syntax Tree Parser")]
         public void TestJustMain()
@@ -241,6 +324,62 @@ namespace Compiler.Services.Tests
         public void TestclassWithExpression()
         {
             var parser = CreateSyntaxParserService(classWithExpression);
+            parser.Parse();
+        }
+
+        [TestMethod()]
+        [TestCategory("Syntax Tree Parser")]
+        public void TestclassWithExpressionBasic()
+        {
+            var parser = CreateSyntaxParserService(classWithExpressionBasic);
+            parser.Parse();
+        }
+
+        [TestMethod()]
+        [TestCategory("Syntax Tree Parser")]
+        public void TestclassWithExpressionSimpleArithmetic()
+        {
+            var parser = CreateSyntaxParserService(classWithExpressionSimpleArithmetic);
+            parser.Parse();
+        }
+
+        [TestMethod()]
+        [TestCategory("Syntax Tree Parser")]
+        public void TestclassWithExpressionBoolean()
+        {
+            var parser = CreateSyntaxParserService(classWithExpressionBoolean);
+            parser.Parse();
+        }
+
+        [TestMethod()]
+        [TestCategory("Syntax Tree Parser")]
+        public void TestclassWithExpressionPemdas()
+        {
+            var parser = CreateSyntaxParserService(classWithExpressionPemdas);
+            parser.Parse();
+        }
+
+        [TestMethod()]
+        [TestCategory("Syntax Tree Parser")]
+        [ExpectedException(typeof(UndeclaredVariableException))]
+        public void TestclassWithExpressionUndeclared1()
+        {
+            try
+            {
+                var parser = CreateSyntaxParserService(classWithExpressionUndeclared1);
+                parser.Parse();
+            }
+            catch (Exception ex)
+            {
+                throw ex.InnerException;
+            }
+        }
+
+        [TestMethod()]
+        [TestCategory("Syntax Tree Parser")]
+        public void TestclassWithExpressionUndeclared2()
+        {
+            var parser = CreateSyntaxParserService(classWithExpressionUndeclared2);
             parser.Parse();
         }
 
