@@ -3,7 +3,6 @@ using Compiler.Models.Exceptions;
 using Compiler.Models.Misc;
 using Compiler.Models.Table;
 using System;
-using System.Linq;
 
 namespace Compiler.Services
 {
@@ -28,6 +27,14 @@ namespace Compiler.Services
             set
             {
                 _CurrentToken = value;
+            }
+        }
+
+        public bool EndOfCodeBlock
+        {
+            get
+            {
+                return CurrentToken.Type == TokenType.CloseCurlyBrace || CurrentToken.Type == TokenType.Return;
             }
         }
 
@@ -317,27 +324,34 @@ namespace Compiler.Services
         {
             // SequenceOfStatements -> Statement ; StatementTail | ε
 
-            var production = "SequenceOfStatements";
-
-            try
-            {
-                Statement();
-            }
-            catch (MissingTokenException)
+            // Sequence of statements exists when not at the end of a code block
+            if (EndOfCodeBlock)
             {
                 // ε production
                 return;
             }
 
+            var production = "SequenceOfStatements";
+
+            Statement();
             MatchAndSetToken(production, TokenType.Semicolon);
             StatementTail();
         }
 
         private void StatementTail()
         {
-            // StatementTail -> Statement StatementTail | ε
+            // StatementTail -> Statement ; StatementTail | ε
+            var production = "StatementTail";
+
+            // Sequence of statements exists when not at the end of a code block
+            if (EndOfCodeBlock)
+            {
+                // ε production
+                return;
+            }
 
             Statement();
+            MatchAndSetToken(production, TokenType.Semicolon);
             StatementTail();
         }
 
@@ -383,7 +397,7 @@ namespace Compiler.Services
             catch (MissingTokenException)
             {
                 // No Relation
-                return ;
+                return;
             }
         }
 

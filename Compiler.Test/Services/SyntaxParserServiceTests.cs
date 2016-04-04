@@ -129,6 +129,41 @@ namespace Compiler.Services.Tests
                 }
             }";
 
+        private const string classWithExpression= @"
+            class calculator {
+                int x, y, z;
+                public void add(int a, int b){
+                    int sum; 
+                    sum = a + b;
+                    return sum;
+                }
+                public void magic(int a, int b){
+                    int ans; 
+                    ans = 3 * a + b / 5;
+                    return ans;
+                }
+                public void undefined(int a, int b){
+                    int ans;
+                    ans = 3 * a + b / 5;
+                    return ans;
+                }
+                public void pemdas(int a, int b){
+                    int ans;
+                    ans = (2)+(3*4)-(((a));
+                    return ans;
+                }
+                public void pemdas2(int a, int b){
+                    int ans;
+                    ans = !!!!!!!!!!2;
+                    ans = !!!!(false);
+                    return ans;
+                }
+            }
+            final class Main {
+                public static void main(String[] args){
+                }
+            }";
+
         [TestMethod()]
         [TestCategory("Syntax Tree Parser")]
         public void TestJustMain()
@@ -198,6 +233,14 @@ namespace Compiler.Services.Tests
         public void TestClassWithConstant()
         {
             var parser = CreateSyntaxParserService(classWithConstant);
+            parser.Parse();
+        }
+
+        [TestMethod()]
+        [TestCategory("Syntax Tree Parser")]
+        public void TestclassWithExpression()
+        {
+            var parser = CreateSyntaxParserService(classWithExpression);
             parser.Parse();
         }
 
