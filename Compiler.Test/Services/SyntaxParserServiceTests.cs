@@ -60,10 +60,10 @@ namespace Compiler.Services.Tests
                     return;
                 }
                 public int kit(){
-                    return ;
+                    return 0;
                 }
                 public boolean dim(){
-                    return ;
+                    return 0;
                 }
             }
             final class Main {
@@ -79,13 +79,13 @@ namespace Compiler.Services.Tests
                     return;
                 }
                 public int kit(int x, int y, boolean z){
-                    return ;
+                    return 0;
                 }
                 public boolean sum(float num, int ans){
-                    return ;
+                    return 0;
                 }
                 public float jamb(float num){
-                    return ;
+                    return 0;
                 }
             }
             final class Main {
@@ -102,16 +102,16 @@ namespace Compiler.Services.Tests
                 }
                 public int kit(int x, int y, boolean z){
                     int a,b,c;
-                    return ;
+                    return 0;
                 }
                 public boolean sum(float num, int ans){
                     float x,y,z;
                     int a;
                     boolean k;
-                    return ;
+                    return 0;
                 }
                 public float jamb(float num){
-                    return ;
+                    return 0;
                 }
             }
             final class Main {
