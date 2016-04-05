@@ -3,6 +3,8 @@ using Compiler.Models.Exceptions;
 using Compiler.Models.Misc;
 using Compiler.Models.Table;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Compiler.Services
 {
@@ -47,6 +49,7 @@ namespace Compiler.Services
         private ClassEntry CurrentClass;
         private TokenType CurrentDataType;
         private VariableScope CurrentVariableScope;
+        private Stack<string> ProductionStack = new Stack<string>();
 
         public SyntaxParserService(LexicalAnalyzerService lexAnalyzer, SymbolTable symbolTable)
         {
@@ -65,6 +68,7 @@ namespace Compiler.Services
                 var errMessage = $"Error parsing token on" +
                     $" line #{LexicalAnalyzer.LineNumber}," +
                     $" Column #{LexicalAnalyzer.Column}.\n\n" +
+                    $" Production Path ({GetProductionPath()})\n\n" + 
                     $" {ex.Message}";
 
                 throw new Exception(errMessage, ex);
@@ -73,6 +77,7 @@ namespace Compiler.Services
 
         private void Program()
         {
+            PushProduction("Program");
             SetNextToken();
 
             Depth = 0;
@@ -90,16 +95,18 @@ namespace Compiler.Services
             {
                 throw new Exception("Didn't reach end of file, but the program grammar is done matching");
             }
+            PopProduction();
         }
 
         private void MoreClasses()
         {
             // MoreClasses -> class idt ExtendsClass { VariableDeclaration MethodDeclaration } MoreClasses | ε
 
-            var production = "MoreClasses";
+            PushProduction("MoreClasses");
 
             if (CurrentToken.Type != TokenType.Class)
             {
+                PopProduction();
                 return;
             }
 
@@ -107,11 +114,11 @@ namespace Compiler.Services
 
             // Match class name, then insert into symbol table
             var classIdentifier = CurrentToken;
-            MatchAndSetToken(production, TokenType.Identifier);
+            MatchAndSetToken(TokenType.Identifier);
             InsertClass(classIdentifier);
 
             ExtendsClass();
-            MatchAndSetToken(production, TokenType.OpenCurlyBrace);
+            MatchAndSetToken(TokenType.OpenCurlyBrace);
 
             // Update values
             Depth++;
@@ -125,31 +132,35 @@ namespace Compiler.Services
             CurrentVariableScope = VariableScope.MethodBody;
             MethodDeclaration();
 
-            MatchAndSetToken(production, TokenType.CloseCurlyBrace);
+            MatchAndSetToken(TokenType.CloseCurlyBrace);
 
             // Exit current scope
             PerformScopeExitAction();
 
             MoreClasses();
+            PopProduction();
         }
 
         private void ExtendsClass()
         {
             // ExtendsClass	->	extendst idt | ε
-            var production = "ClassDeclaration";
+
+            PushProduction("ClassDeclaration");
 
             // If an extends is matched
             if (this.CurrentToken.Type == TokenType.Extends)
             {
                 SetNextToken();
-                MatchAndSetToken(production, TokenType.Identifier);
+                MatchAndSetToken(TokenType.Identifier);
             }
+            PopProduction();
         }
 
         private void VariableDeclaration()
         {
             // VariableDeclaration -> Type IdentifierList ; VariableDeclaration | finalt Type idt = numt; VariableDeclaration | ε
-            var production = "VariableDeclaration";
+
+            PushProduction("VariableDeclaration");
 
             if (CurrentToken.Type == TokenType.Final)
             {
@@ -159,17 +170,17 @@ namespace Compiler.Services
                 Type();
 
                 var identifier = CurrentToken;
-                MatchAndSetToken(production, TokenType.Identifier);
-                MatchAndSetToken(production, TokenType.Assignment);
+                MatchAndSetToken(TokenType.Identifier);
+                MatchAndSetToken(TokenType.Assignment);
 
                 var value = CurrentToken.Lexeme;
                 if (dataType == TokenType.Boolean)
                 {
-                    MatchAndSetToken(production, TokenGroup.ReservedWord);
+                    MatchAndSetToken(TokenGroup.ReservedWord);
                 }
                 else
                 {
-                    MatchAndSetToken(production, TokenGroup.Literal);
+                    MatchAndSetToken(TokenGroup.Literal);
                 }
 
                 InsertVariable(dataType, identifier, true, value);
@@ -184,22 +195,28 @@ namespace Compiler.Services
                 catch (Exception)
                 {
                     // The ε case.
+                    // Pop Type production
+                    PopProduction();
+                    // Pop VaraibleDeclaration production
+                    PopProduction();
                     return;
                 }
 
                 IdentifierList();
             }
-            MatchAndSetToken(production, TokenType.Semicolon);
+            MatchAndSetToken(TokenType.Semicolon);
             VariableDeclaration();
+            PopProduction();
         }
 
         private void IdentifierList()
         {
             // IdentifierList -> idt | IdentifierList , idt
-            var production = "IdentifierList";
-            var identifier = CurrentToken;
 
-            MatchAndSetToken(production, TokenType.Identifier);
+            var identifier = CurrentToken;
+            PushProduction("IdentifierList");
+
+            MatchAndSetToken(TokenType.Identifier);
             InsertVariable(CurrentDataType, identifier);
 
             if (CurrentToken.Type == TokenType.Comma)
@@ -207,12 +224,14 @@ namespace Compiler.Services
                 SetNextToken();
                 IdentifierList();
             }
+            PopProduction();
         }
 
         private void Type()
         {
             // Type -> intt | booleant |voidt | floatt
-            var production = "Type";
+
+            PushProduction("Type");
 
             switch (CurrentToken.Type)
             {
@@ -224,14 +243,16 @@ namespace Compiler.Services
                     break;
 
                 default:
-                    throw new MissingTokenException("int|boolean|void|float", this.CurrentToken.Type.ToString(), production);
+                    throw new MissingTokenException("int|boolean|void|float", this.CurrentToken.Type.ToString(), ProductionStack.Peek());
             }
+            PopProduction();
         }
 
         private void MethodDeclaration()
         {
             // MethodDeclaration -> publict Type idt (FormalParameterList) { VariableDeclaration SequenceofStatements returnt Expression ; } MethodDeclaration | ε
-            var production = "MethodDeclaration";
+
+            PushProduction("MethodDeclaration");
 
             if (CurrentToken.Type == TokenType.Public)
             {
@@ -241,7 +262,7 @@ namespace Compiler.Services
                 Type();
 
                 var identifier = CurrentToken;
-                MatchAndSetToken(production, TokenType.Identifier);
+                MatchAndSetToken(TokenType.Identifier);
 
                 // Insert method in symbol table
                 InsertMethod(returnType, identifier);
@@ -249,13 +270,13 @@ namespace Compiler.Services
                 // update depth
                 Depth++;
 
-                MatchAndSetToken(production, TokenType.OpenParen);
+                MatchAndSetToken(TokenType.OpenParen);
 
                 CurrentVariableScope = VariableScope.MethodParameter;
                 FormalParameterList();
 
-                MatchAndSetToken(production, TokenType.CloseParen);
-                MatchAndSetToken(production, TokenType.OpenCurlyBrace);
+                MatchAndSetToken(TokenType.CloseParen);
+                MatchAndSetToken(TokenType.OpenCurlyBrace);
 
                 // reset offset
                 Offset = 0;
@@ -266,29 +287,31 @@ namespace Compiler.Services
 
                 if (returnType == TokenType.Void && CurrentToken.Type == TokenType.Return)
                 {
-                    MatchAndSetToken(production, TokenType.Return);
+                    MatchAndSetToken(TokenType.Return);
                 }
                 else
                 {
-                    MatchAndSetToken(production, TokenType.Return);
+                    MatchAndSetToken(TokenType.Return);
                     Expression();
                 }
 
-                MatchAndSetToken(production, TokenType.Semicolon);
-                MatchAndSetToken(production, TokenType.CloseCurlyBrace);
+                MatchAndSetToken(TokenType.Semicolon);
+                MatchAndSetToken(TokenType.CloseCurlyBrace);
 
                 // Exit current scope
                 PerformScopeExitAction();
 
                 MethodDeclaration();
             }
+            PopProduction();
         }
 
         private void FormalParameterList()
         {
             // FormalParameterList -> Type idt RestOfFormalParameterList | ε
-            var production = "FormalParameterList";
+
             var dataType = CurrentToken.Type;
+            PushProduction("FormalParameterList");
 
             try
             {
@@ -297,20 +320,24 @@ namespace Compiler.Services
             catch (Exception)
             {
                 // ε case
+                PopProduction();
+                PopProduction();
                 return;
             }
 
             var identifier = CurrentToken;
-            MatchAndSetToken(production, TokenType.Identifier);
+            MatchAndSetToken(TokenType.Identifier);
 
             InsertVariable(dataType, identifier);
             RestOfFormalParameterList();
+            PopProduction();
         }
 
         private void RestOfFormalParameterList()
         {
             // RestOfFormalParameterList -> , Type idt RestOfFormalParameterList | ε
-            var production = "RestOfFormalParameterList";
+
+            PushProduction("RestOfFormalParameterList");
 
             if (CurrentToken.Type == TokenType.Comma)
             {
@@ -321,53 +348,59 @@ namespace Compiler.Services
 
                 var identifier = CurrentToken;
 
-                MatchAndSetToken(production, TokenType.Identifier);
+                MatchAndSetToken(TokenType.Identifier);
 
                 InsertVariable(dataType, identifier);
 
                 RestOfFormalParameterList();
             }
+            PopProduction();
         }
 
         private void SequenceofStatements()
         {
             // SequenceOfStatements -> Statement ; StatementTail | ε
+            PushProduction("SequenceOfStatements");
 
             // Sequence of statements exists when not at the end of a code block
             if (EndOfCodeBlock)
             {
                 // ε production
+                PopProduction();
                 return;
             }
 
-            var production = "SequenceOfStatements";
-
             Statement();
-            MatchAndSetToken(production, TokenType.Semicolon);
+            MatchAndSetToken(TokenType.Semicolon);
             StatementTail();
+            PopProduction();
         }
 
         private void StatementTail()
         {
             // StatementTail -> Statement ; StatementTail | ε
-            var production = "StatementTail";
+
+            PushProduction("StatementTail");
 
             // Sequence of statements exists when not at the end of a code block
             if (EndOfCodeBlock)
             {
                 // ε production
+                PopProduction();
                 return;
             }
 
             Statement();
-            MatchAndSetToken(production, TokenType.Semicolon);
+            MatchAndSetToken(TokenType.Semicolon);
             StatementTail();
+            PopProduction();
         }
 
         private void Statement()
         {
             // Statement -> AssignmentStatement | IOStatement
-            var production = "Statement";
+
+            PushProduction("Statement");
 
             if (CurrentToken.Type == TokenType.Identifier)
             {
@@ -377,63 +410,78 @@ namespace Compiler.Services
             {
                 IOStatement();
             }
+            PopProduction();
         }
 
         private void AssignmentStatement()
         {
             // AssignmentStatement -> idt = Expression
-            var production = "AssignmentStatement";
 
-            MatchAndSetToken(production, TokenType.Identifier);
-            MatchAndSetToken(production, TokenType.Assignment);
+            PushProduction("AssignmentStatement");
+
+            MatchAndSetToken(TokenType.Identifier);
+            MatchAndSetToken(TokenType.Assignment);
 
             // TODO: Check if identifier exists
             Expression();
+            PopProduction();
         }
 
         private void IOStatement()
         {
             // IOStatement -> ε
+            PushProduction("IOStatement");
+            PopProduction();
         }
 
         private void Expression()
         {
             // Expression -> Relation | ε
+            PushProduction("Expression");
             try
             {
                 Relation();
             }
             catch (MissingOptionalTokenException)
             {
-                // No Relation
+                // ε production
+                PopProduction();
+                PopProduction();
                 return;
             }
+            PopProduction();
         }
 
         private void Relation()
         {
             // Relation -> SimpleExpression
+            PushProduction("Relation");
             SimpleExpression();
+            PopProduction();
         }
 
         private void SimpleExpression()
         {
             // SimpleExpression -> Term MoreTerm
+            PushProduction("SimpleExpression");
             Term();
             MoreTerm();
+            PopProduction();
         }
 
         private void Term()
         {
             // Term -> Factor MoreFactor
+            PushProduction("Term");
             Factor();
             MoreFactor();
+            PopProduction();
         }
 
         private void MoreTerm()
         {
             // MoreTerm -> AddOperators Term MoreTerm | ε
-
+            PushProduction("MoreTerm");
             try
             {
                 AddOperators();
@@ -441,24 +489,29 @@ namespace Compiler.Services
             catch (MissingOptionalTokenException)
             {
                 // ε production
+                PopProduction();
+                PopProduction();
                 return;
             }
 
             Term();
             MoreTerm();
+            PopProduction();
         }
 
         private void Factor()
         {
             // Factor -> id | num | ( Expression ) | ! Factor | true | false | SignOperator Factor
-            var production = "Factor";
+
             var currentTokenType = CurrentToken.Type;
+
+            PushProduction("Factor");
 
             if (CurrentToken.Type == TokenType.Identifier)
             {
                 var identifier = CurrentToken.Lexeme;
 
-                MatchAndSetToken(production, TokenType.Identifier);
+                MatchAndSetToken(TokenType.Identifier);
 
                 if (SymbolTable.Lookup(identifier) == null)
                 {
@@ -467,42 +520,48 @@ namespace Compiler.Services
             }
             else if (currentTokenType == TokenType.LiteralInteger)
             {
-                MatchAndSetToken(production, TokenType.LiteralInteger);
+                MatchAndSetToken(TokenType.LiteralInteger);
             }
             else if (currentTokenType == TokenType.LiteralReal)
             {
-                MatchAndSetToken(production, TokenType.LiteralReal);
+                MatchAndSetToken(TokenType.LiteralReal);
             }
             else if (currentTokenType == TokenType.OpenParen)
             {
-                MatchAndSetToken(production, TokenType.OpenParen);
+                MatchAndSetToken(TokenType.OpenParen);
                 Expression();
-                MatchAndSetToken(production, TokenType.CloseParen);
+                MatchAndSetToken(TokenType.CloseParen);
             }
             else if (currentTokenType == TokenType.BooleanNot)
             {
-                MatchAndSetToken(production, TokenType.BooleanNot);
+                MatchAndSetToken(TokenType.BooleanNot);
                 Factor();
             }
             else if (currentTokenType == TokenType.True)
             {
-                MatchAndSetToken(production, TokenType.True);
+                MatchAndSetToken(TokenType.True);
             }
             else if (currentTokenType == TokenType.False)
             {
-                MatchAndSetToken(production, TokenType.False);
+                MatchAndSetToken(TokenType.False);
             }
-            else// if (currentTokenType == TokenType.Minus)
+            else if (currentTokenType == TokenType.Minus)
             {
                 SignOperator();
                 Factor();
             }
+            else
+            {
+                throw new Exception($"Unexpected token {CurrentToken.Type}, found in production ({ProductionStack.Peek()}).");
+            }
+
+            PopProduction();
         }
 
         private void MoreFactor()
         {
             // MoreFactor -> MultiplicationOperators Factor MoreFactor | ε
-            var production = "MoreFactor";
+            PushProduction("MoreFactor");
 
             try
             {
@@ -511,79 +570,101 @@ namespace Compiler.Services
             catch (MissingOptionalTokenException)
             {
                 // ε production
+                PopProduction();
+                PopProduction();
                 return;
             }
 
             Factor();
             MoreFactor();
+            PopProduction();
         }
 
         private void AddOperators()
         {
             // AddOperators -> + | - | ||
-            var production = "AddOperators";
-            SetTokenIfAnyMatch(production, TokenType.Plus, TokenType.Minus, TokenType.BooleanOr);
+            PushProduction("AddOperators");
+            SetTokenIfAnyMatch(TokenType.Plus, TokenType.Minus, TokenType.BooleanOr);
+            PopProduction();
         }
 
         private void MultiplicationOperators()
         {
             // MultiplicationOperators -> * | / | &&
-            var production = "MultiplicationOperators";
-            SetTokenIfAnyMatch(production, TokenType.Multiplication, TokenType.Divide, TokenType.BooleanAnd);
+            PushProduction("MultiplicationOperators");
+            SetTokenIfAnyMatch(TokenType.Multiplication, TokenType.Divide, TokenType.BooleanAnd);
+            PopProduction();
         }
 
         private void SignOperator()
         {
             // SignOperator -> -
-            var production = "SignOperator";
-            MatchAndSetToken(production, TokenType.Minus);
+            PushProduction("SignOperator");
+            MatchAndSetToken(TokenType.Minus);
+            PopProduction();
         }
 
         private void MainClass()
         {
             // MainClass -> finalt classt idt { publict statict voidt main (String [] idt) {SequenceofStatements }}
 
-            var production = "MainClass";
+            PushProduction("MainClass");
 
-            MatchAndSetToken(production, TokenType.Final);
-            MatchAndSetToken(production, TokenType.Class);
+            MatchAndSetToken(TokenType.Final);
+            MatchAndSetToken(TokenType.Class);
 
             var identifier = CurrentToken;
 
-            MatchAndSetToken(production, TokenType.Identifier);
+            MatchAndSetToken(TokenType.Identifier);
             InsertClass(identifier);
 
-            MatchAndSetToken(production, TokenType.OpenCurlyBrace);
+            MatchAndSetToken(TokenType.OpenCurlyBrace);
 
             Depth++;
-            MatchAndSetToken(production, TokenType.Public);
-            MatchAndSetToken(production, TokenType.Static);
-            MatchAndSetToken(production, TokenType.Void);
+            MatchAndSetToken(TokenType.Public);
+            MatchAndSetToken(TokenType.Static);
+            MatchAndSetToken(TokenType.Void);
 
             identifier = CurrentToken;
-            MatchAndSetToken(production, TokenType.Main);
+            MatchAndSetToken(TokenType.Main);
             InsertMethod(TokenType.Void, identifier);
 
-            MatchAndSetToken(production, TokenType.OpenParen);
-            MatchAndSetToken(production, TokenType.String);
-            MatchAndSetToken(production, TokenType.OpenSquareBracket);
-            MatchAndSetToken(production, TokenType.CloseSquareBracket);
-            MatchAndSetToken(production, TokenType.Identifier);
+            MatchAndSetToken(TokenType.OpenParen);
+            MatchAndSetToken(TokenType.String);
+            MatchAndSetToken(TokenType.OpenSquareBracket);
+            MatchAndSetToken(TokenType.CloseSquareBracket);
+            MatchAndSetToken(TokenType.Identifier);
 
             // TODO: Handle command line argument parsing
-            MatchAndSetToken(production, TokenType.CloseParen);
-            MatchAndSetToken(production, TokenType.OpenCurlyBrace);
+            MatchAndSetToken(TokenType.CloseParen);
+            MatchAndSetToken(TokenType.OpenCurlyBrace);
 
             Depth++;
             SequenceofStatements();
 
-            MatchAndSetToken(production, TokenType.CloseCurlyBrace);
+            MatchAndSetToken(TokenType.CloseCurlyBrace);
 
             PerformScopeExitAction();
 
-            MatchAndSetToken(production, TokenType.CloseCurlyBrace);
+            MatchAndSetToken(TokenType.CloseCurlyBrace);
 
             PerformScopeExitAction();
+            PopProduction();
+        }
+
+        private void PushProduction(string production)
+        {
+            ProductionStack.Push(production);
+        }
+
+        private void PopProduction()
+        {
+            ProductionStack.Pop();
+        }
+
+        private string GetProductionPath()
+        {
+            return string.Join(" => ", ProductionStack.Reverse());
         }
 
         private void SetNextToken()
@@ -591,7 +672,7 @@ namespace Compiler.Services
             this.CurrentToken = this.LexicalAnalyzer.GetNextToken();
         }
 
-        private void SetTokenIfAnyMatch(string production, params TokenType[] types)
+        private void SetTokenIfAnyMatch(params TokenType[] types)
         {
             if (types == null || types.Length < 1)
             {
@@ -608,24 +689,24 @@ namespace Compiler.Services
             }
 
             var expected = string.Join(" | ", types);
-            throw new MissingOptionalTokenException(expected, CurrentToken.Type.ToString(), production);
+            throw new MissingOptionalTokenException(expected, CurrentToken.Type.ToString(), ProductionStack.Peek());
         }
 
-        private void MatchAndSetToken(string production, TokenType expectedType)
+        private void MatchAndSetToken(TokenType expectedType)
         {
             if (this.CurrentToken.Type != expectedType)
             {
-                throw new MissingTokenException(expectedType, this.CurrentToken.Type, production);
+                throw new MissingTokenException(expectedType, this.CurrentToken.Type, ProductionStack.Peek());
             }
 
             SetNextToken();
         }
 
-        private void MatchAndSetToken(string production, TokenGroup expectedGroup)
+        private void MatchAndSetToken(TokenGroup expectedGroup)
         {
             if (this.CurrentToken.Group != expectedGroup)
             {
-                throw new MissingTokenException(expectedGroup, this.CurrentToken.Group, production);
+                throw new MissingTokenException(expectedGroup, this.CurrentToken.Group, ProductionStack.Peek());
             }
 
             SetNextToken();
@@ -641,7 +722,7 @@ namespace Compiler.Services
 
             if (_scope == VariableScope.MethodParameter)
             {
-                var paramType = new LinkedListNode<VariableType> { Value = _dataType };
+                var paramType = new Models.Table.LinkedListNode<VariableType> { Value = _dataType };
                 paramType.Next = CurrentMethod.ParameterTypes;
                 CurrentMethod.ParameterTypes = paramType;
 
@@ -649,7 +730,7 @@ namespace Compiler.Services
             }
             else if (_scope == VariableScope.ClassBody)
             {
-                var field = new LinkedListNode<string> { Value = identifier.Lexeme };
+                var field = new Models.Table.LinkedListNode<string> { Value = identifier.Lexeme };
                 field.Next = CurrentClass.Fields;
                 CurrentClass.Fields = field;
 
@@ -712,7 +793,7 @@ namespace Compiler.Services
             entry.Content = CurrentMethod;
 
             // Add method name to class
-            var methodName = new LinkedListNode<string> { Value = identifier.Lexeme };
+            var methodName = new Models.Table.LinkedListNode<string> { Value = identifier.Lexeme };
             methodName.Next = CurrentClass.MethodNames;
             CurrentClass.MethodNames = methodName;
         }
