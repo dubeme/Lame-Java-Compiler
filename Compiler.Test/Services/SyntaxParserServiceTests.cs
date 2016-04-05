@@ -238,7 +238,7 @@ namespace Compiler.Services.Tests
             class calculator {
                 public int func(int a, int b){
                     int ans;
-                    var_ans = (3)/(a/b*)+(13);
+                    var_ans = (3)/(a/b*4)+(13);
                     return ans;
                 }
             }
@@ -377,10 +377,18 @@ namespace Compiler.Services.Tests
 
         [TestMethod()]
         [TestCategory("Syntax Tree Parser")]
+        [ExpectedException(typeof(UndeclaredVariableException))]
         public void TestclassWithExpressionUndeclared2()
         {
-            var parser = CreateSyntaxParserService(classWithExpressionUndeclared2);
-            parser.Parse();
+            try
+            {
+                var parser = CreateSyntaxParserService(classWithExpressionUndeclared2);
+                parser.Parse();
+            }
+            catch (Exception ex)
+            {
+                throw ex.InnerException;
+            }
         }
 
         private SyntaxParserService CreateSyntaxParserService(string data)

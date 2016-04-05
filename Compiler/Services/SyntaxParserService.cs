@@ -67,9 +67,9 @@ namespace Compiler.Services
             {
                 var errMessage = $"Error parsing token on" +
                     $" line #{LexicalAnalyzer.LineNumber}," +
-                    $" Column #{LexicalAnalyzer.Column}.\n\n" +
-                    $" Production Path ({GetProductionPath()})\n\n" + 
-                    $" {ex.Message}";
+                    $" Column #{LexicalAnalyzer.Column}.\n\n" + 
+                    $" {ex.Message}\n\n" +
+                    $" Production Path ({GetProductionPath()})";
 
                 throw new Exception(errMessage, ex);
             }
@@ -418,11 +418,16 @@ namespace Compiler.Services
             // AssignmentStatement -> idt = Expression
 
             PushProduction("AssignmentStatement");
+            var identifier = CurrentToken.Lexeme;
 
             MatchAndSetToken(TokenType.Identifier);
-            MatchAndSetToken(TokenType.Assignment);
 
-            // TODO: Check if identifier exists
+            if (SymbolTable.Lookup(identifier) == null)
+            {
+                throw new UndeclaredVariableException(identifier);
+            }
+
+            MatchAndSetToken(TokenType.Assignment);
             Expression();
             PopProduction();
         }
