@@ -353,7 +353,11 @@ namespace Compiler.Services
 
             lexeme.Append(operatorChar);
 
-            if (this.PeekNext == '=')
+            if (this.PeekNext == '!')
+            {
+                // Avoids capturing !!
+            }
+            else if (this.PeekNext == '=')
             {
                 // Operators in the form OPERATOR_EQUAL, <=, +=, !=
                 lexeme.Append(this.NextChar);
