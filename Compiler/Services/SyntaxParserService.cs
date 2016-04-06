@@ -69,7 +69,7 @@ namespace Compiler.Services
                     $" line #{LexicalAnalyzer.LineNumber}," +
                     $" Column #{LexicalAnalyzer.Column}.\n\n" + 
                     $" {ex.Message}\n\n" +
-                    $" Production Path ({GetProductionPath()})";
+                    $" Production Path => \n\n{GetProductionPath()}\n\n";
 
                 throw new Exception(errMessage, ex);
             }
@@ -640,7 +640,7 @@ namespace Compiler.Services
             MatchAndSetToken(TokenType.CloseSquareBracket);
             MatchAndSetToken(TokenType.Identifier);
 
-            // TODO: Handle command line argument parsing
+            // For course, skipping command line arguments (above)
             MatchAndSetToken(TokenType.CloseParen);
             MatchAndSetToken(TokenType.OpenCurlyBrace);
 
@@ -669,7 +669,8 @@ namespace Compiler.Services
 
         private string GetProductionPath()
         {
-            return string.Join(" => ", ProductionStack.Reverse());
+            var tab = "    ";
+            return tab + string.Join($"\n{tab}", ProductionStack.Reverse());
         }
 
         private void SetNextToken()
