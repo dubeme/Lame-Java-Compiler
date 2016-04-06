@@ -187,7 +187,6 @@ namespace Compiler.Models
             }
             else if (Regex.IsMatch(lexeme, identifierRegex))
             {
-                // TODO: Restrain identifier length
                 int MAX_LENGTH = 31;
                 if (lexeme.Length > MAX_LENGTH)
                 {
