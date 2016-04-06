@@ -7,7 +7,7 @@ namespace Compiler.Services.Tests
     [TestClass()]
     public class SyntaxParserServiceTests
     {
-        private const string FILE_PATH = @"..\..\test.files";
+        private const string FILE_PATH = @"..\..\test.files\";
 
         private const string justMain = @"justMain.java";
         private const string main1Class = @"main1Class.java";
@@ -172,7 +172,7 @@ namespace Compiler.Services.Tests
 
         private SyntaxParserService CreateSyntaxParserService(string fileName)
         {
-            var fullPath = $@"{FILE_PATH}\{fileName}";
+            var fullPath = $@"{FILE_PATH}{fileName}";
             var data = System.IO.File.ReadAllText(fullPath);
 
             System.Diagnostics.Debug.WriteLine(data + "\n\n\n\n\n\n\n");
