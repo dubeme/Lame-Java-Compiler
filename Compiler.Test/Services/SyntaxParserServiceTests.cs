@@ -7,245 +7,24 @@ namespace Compiler.Services.Tests
     [TestClass()]
     public class SyntaxParserServiceTests
     {
-        private const string justMain = @"
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
+        private const string FILE_PATH = @"..\..\test.files";
 
-        private const string main1Class = @"
-            class tim {
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-
-        private const string main2Classes = @"
-            class tim {
-            }
-            class tom {
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-
-        private const string classWithFields = @"
-            class tim {
-                int x, y, z;
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-
-        private const string classWithFieldsAndMethod = @"
-            class tim {
-                int x, y, z;
-                public void ass(int a, int b, int c){
-                    return;
-                }
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-
-        private const string classWithFieldsAndMethods = @"
-            class tim {
-                int x, y, z;
-                boolean a, b, c;
-                public void ass(){
-                    return;
-                }
-                public int kit(){
-                    return 0;
-                }
-                public boolean dim(){
-                    return 0;
-                }
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-
-        private const string classWithFieldsMethodsParameters = @"
-            class tim {
-                int x, y, z;
-                boolean a, b, c;
-                public void ass(){
-                    return;
-                }
-                public int kit(int x, int y, boolean z){
-                    return 0;
-                }
-                public boolean sum(float num, int ans){
-                    return 0;
-                }
-                public float jamb(float num){
-                    return 0;
-                }
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-
-        private const string classWithFieldsMethodsParametersAndLocals = @"
-            class tim {
-                int x, y, z;
-                boolean a, b, c;
-                public void ass(){
-                    return;
-                }
-                public int kit(int x, int y, boolean z){
-                    int a,b,c;
-                    return 0;
-                }
-                public boolean sum(float num, int ans){
-                    float x,y,z;
-                    int a;
-                    boolean k;
-                    return 0;
-                }
-                public float jamb(float num){
-                    return 0;
-                }
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-
-        private const string classWithConstant = @"
-            class two{
-                final boolean BOOL = false;
-                final int NUMBER = 1234567890;
-                final float PI = 3.14;
-            }
-            final class Main {
-                public static void main(String[] args) {
-                }
-            }";
-
-        private const string classWithExpression= @"
-            class calculator {
-                int x, y, z;
-                public void add(int a, int b){
-                    int sum; 
-                    sum = a + b;
-                    return sum;
-                }
-                public void magic(int a, int b){
-                    int ans; 
-                    ans = 3 * a + b / 5;
-                    return ans;
-                }
-                public void undefined(int a, int b){
-                    int ans;
-                    ans = 3 * a + b / 5;
-                    return ans;
-                }
-                public void pemdas(int a, int b){
-                    int ans;
-                    ans = (2)+(3*4)-(((a));
-                    return ans;
-                }
-                public void pemdas2(int a, int b){
-                    int ans;
-                    ans = !!!!!!!!!!2;
-                    ans = !!!!(false);
-                    return ans;
-                }
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-
-        private const string classWithExpressionBasic = @"
-            class calculator {
-                public void func(){
-                    int var_int;
-                    float var_float;
-                    boolean var_boolean;
-                    
-                    var_int = 9;
-                    var_float = 3.14;
-                    var_boolean = false;
-                    return ;
-                }
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-        private const string classWithExpressionSimpleArithmetic = @"
-            class calculator {
-                int x, y, z;
-                public void func(int a, int b){
-                    float ans; 
-                    ans = 3.14 * 5 * 5 + 5.3434 - 65.09909;
-                    return;
-                }
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-        private const string classWithExpressionBoolean = @"
-            class calculator {
-                public int func(int a, int b){
-                    boolean ans;
-                    ans = !false;
-                    ans = !!true;
-                    ans = (!true);
-                    return ans;
-                }
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-        private const string classWithExpressionPemdas = @"
-            class calculator {
-                public int func(int a, int b){
-                    int ans;
-                    ans = (-2)+(3*4)-(a);
-                    return ans;
-                }
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-        private const string classWithExpressionUndeclared1 = @"
-            class calculator {
-                int x, y, z;
-                public int func(int a, int b){
-                    int ans;
-                    ans = (3)/(a/b*c)+(13);
-                    return ans;
-                }
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
-        private const string classWithExpressionUndeclared2 = @"
-            class calculator {
-                public int func(int a, int b){
-                    int ans;
-                    var_ans = (3)/(a/b*4)+(13);
-                    return ans;
-                }
-            }
-            final class Main {
-                public static void main(String[] args){
-                }
-            }";
+        private const string justMain = @"justMain.java";
+        private const string main1Class = @"main1Class.java";
+        private const string main2Classes = @"main2Classes.java";
+        private const string classWithFields = @"classWithFields.java";
+        private const string classWithFieldsAndMethod = @"classWithFieldsAndMethod.java";
+        private const string classWithFieldsAndMethods = @"classWithFieldsAndMethods.java";
+        private const string classWithFieldsMethodsParameters = @"classWithFieldsMethodsParameters.java";
+        private const string classWithFieldsMethodsParametersAndLocals = @"classWithFieldsMethodsParametersAndLocals.java";
+        private const string classWithConstant = @"classWithConstant.java";
+        private const string classWithExpression = @"classWithExpression.java";
+        private const string classWithExpressionBasic = @"classWithExpressionBasic.java";
+        private const string classWithExpressionSimpleArithmetic = @"classWithExpressionSimpleArithmetic.java";
+        private const string classWithExpressionBoolean = @"classWithExpressionBoolean.java";
+        private const string classWithExpressionPemdas = @"classWithExpressionPemdas.java";
+        private const string classWithExpressionUndeclared1 = @"classWithExpressionUndeclared1.java";
+        private const string classWithExpressionUndeclared2 = @"classWithExpressionUndeclared2.java";
 
         [TestMethod()]
         [TestCategory("Syntax Tree Parser")]
@@ -391,8 +170,14 @@ namespace Compiler.Services.Tests
             }
         }
 
-        private SyntaxParserService CreateSyntaxParserService(string data)
+        private SyntaxParserService CreateSyntaxParserService(string fileName)
         {
+            var fullPath = $@"{FILE_PATH}\{fileName}";
+            var data = System.IO.File.ReadAllText(fullPath);
+
+            System.Diagnostics.Debug.WriteLine(data + "\n\n\n\n\n\n\n");
+
+
             var streamReader = LexicalAnalyzerServiceTests.CreateStreamReaderWith(data);
             var lexAnalyzer = new LexicalAnalyzerService(streamReader);
             var symbolTable = new SymbolTable();
