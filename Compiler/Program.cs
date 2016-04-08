@@ -44,7 +44,7 @@ namespace Compiler
                 foreach (var codeFile in testCodeFiles)
                 {
                     var sourceCode = System.IO.File.ReadAllText(codeFile);
-                    Console.WriteLine(sourceCode);
+                    CompilerService.PrintSourceCode(sourceCode);
                     CompilerService.CompileString(sourceCode);
                     Console.WriteLine($"\n\nPlease press enter to continue ... ");
                     Console.ReadLine();

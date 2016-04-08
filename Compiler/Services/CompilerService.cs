@@ -27,6 +27,7 @@ namespace Compiler.Services
 
                 var syntaxParser = new SyntaxParserService(lexAnalyzer, symbolTable);
 
+                PrintSourceCode(File.ReadAllText(fileName));
                 syntaxParser.Parse();
             }
             catch (Exception ex)
@@ -98,11 +99,38 @@ namespace Compiler.Services
             }
         }
 
-        private static void Print(object obj, ConsoleColor color)
+        public static void PrintSourceCode(string sourceCode)
+        {
+            if (sourceCode == null)
+            {
+                return;
+            }
+
+            var lines = sourceCode.Split('\n');
+            var lineNumber = 1;
+
+            foreach (var line in lines)
+            {
+                Print($"{lineNumber, 6}| {line}", ConsoleColor.Cyan);
+                lineNumber++;
+            }
+
+            Print("\n", ConsoleColor.White);
+        }
+
+        private static void Print(object obj, ConsoleColor color, bool newLine = true)
         {
             var cc = Console.ForegroundColor;
             Console.ForegroundColor = color;
-            Console.WriteLine(obj);
+
+            if (newLine)
+            {
+                Console.WriteLine(obj);
+            }
+            else
+            {
+                Console.Write(obj);
+            }
             Console.ForegroundColor = cc;
         }
     }
