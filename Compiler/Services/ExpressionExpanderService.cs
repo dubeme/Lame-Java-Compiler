@@ -1,4 +1,5 @@
 ﻿using Compiler.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,8 +7,16 @@ namespace Compiler.Services
 {
     public class ExpressionExpanderService
     {
+        const int TEMP_IDENTIFIER = 0;
+        const int OPERAND1 = 1;
+        const int OPERATOR = 2;
+        const int OPERAND2 = 3;
+        const int NEGATE_OPERAND1 = 4;
+        const int NEGATE_OPERAND2 = 5;
+        const int SIZE = 6;
+
         private List<Token> Tokens = new List<Token>();
-        private Stack<Token> OutputStack = new Stack<Token>();
+        private Stack<Token> PostfixStack = new Stack<Token>();
         private Stack<Token> Operators = new Stack<Token>();
         private int Count;
 
@@ -24,7 +33,7 @@ namespace Compiler.Services
         public void Clear()
         {
             Tokens.Clear();
-            OutputStack.Clear();
+            PostfixStack.Clear();
             Operators.Clear();
             Count = 0;
         }
@@ -36,7 +45,7 @@ namespace Compiler.Services
                 // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
                 if (IsNumberOrVariable(token))
                 {
-                    OutputStack.Push(token);
+                    PostfixStack.Push(token);
                 }
                 else if (token == Token.UNARY_MINUS)
                 {
@@ -65,7 +74,7 @@ namespace Compiler.Services
                 }
                 else if (token.Type == TokenType.True || token.Type == TokenType.False)
                 {
-                    OutputStack.Push(token);
+                    PostfixStack.Push(token);
                 }
                 else if (token.Type == TokenType.OpenParen)
                 {
@@ -75,7 +84,7 @@ namespace Compiler.Services
                 {
                     while (Operators.Any() && Operators.Peek().Type != TokenType.OpenParen)
                     {
-                        OutputStack.Push(Operators.Pop());
+                        PostfixStack.Push(Operators.Pop());
                     }
 
                     Operators.Pop();
@@ -93,7 +102,7 @@ namespace Compiler.Services
                         // - + has lesser precedence than * /
                         while (Operators.Any() && IsMultDiv(Operators.Peek().Type) && IsAddSub(token.Type))
                         {
-                            OutputStack.Push(Operators.Pop());
+                            PostfixStack.Push(Operators.Pop());
                         }
 
                         Operators.Push(token);
@@ -104,28 +113,16 @@ namespace Compiler.Services
             // Add remaining operators onto output queue
             while (Operators.Any())
             {
-                OutputStack.Push(Operators.Pop());
+                PostfixStack.Push(Operators.Pop());
             }
 
-            Parse();
+            PrintExpressionList(ParsePostfixStack());
         }
 
-        private string GenerateVariableName()
+        private List<object[]> ParsePostfixStack()
         {
-            return $"_t{++Count}";
-        }
 
-        private void Parse()
-        {
-            const int TEMP_IDENTIFIER = 0;
-            const int OPERAND1 = 1;
-            const int OPERATOR = 2;
-            const int OPERAND2 = 3;
-            const int NEGATE_OPERAND1 = 4;
-            const int NEGATE_OPERAND2 = 5;
-            const int SIZE = 6;
-
-            var reverseStack = this.OutputStack.Reverse();
+            var reverseStack = this.PostfixStack.Reverse();
             var expressionStack = new Stack<object[]>();
             var expressionList = new List<object[]>();
 
@@ -170,10 +167,20 @@ namespace Compiler.Services
                 expressionList.Add(entry);
             }
 
-            PrintExpressionList(TEMP_IDENTIFIER, OPERAND1, OPERATOR, OPERAND2, NEGATE_OPERAND1, NEGATE_OPERAND2, expressionList);
+            if (expressionStack.Count != 1)
+            {
+                throw new Exception("Invalid expression");
+            }
+
+            return expressionList;
         }
 
-        private static void PrintExpressionList(int TEMP_IDENTIFIER, int OPERAND1, int OPERATOR, int OPERAND2, int NEGATE_OPERAND1, int NEGATE_OPERAND2, List<object[]> expressionList)
+        private string GenerateVariableName()
+        {
+            return $"_t{++Count}";
+        }
+
+        private static void PrintExpressionList(List<object[]> expressionList)
         {
             System.Console.WriteLine();
             foreach (var item in expressionList)
@@ -265,9 +272,9 @@ namespace Compiler.Services
         {
             Evaluate();
             var tab = "    ";
-            var lineNumber = !OutputStack.Any() ? -1 :
-                OutputStack.First(t => t.LineNumber != Token.UNARY_MINUS.LineNumber).LineNumber;
-            return $"{tab} # {lineNumber} =>   {string.Join($" ", OutputStack.Reverse().Select(tok => tok.Lexeme))}\n";
+            var lineNumber = !PostfixStack.Any() ? -1 :
+                PostfixStack.First(t => t.LineNumber != Token.UNARY_MINUS.LineNumber).LineNumber;
+            return $"{tab} # {lineNumber} =>   {string.Join($" ", PostfixStack.Reverse().Select(tok => tok.Lexeme))}\n";
             // return "\n\n" + tab + string.Join($"\n{tab}", OutputStack.Reverse());
         }
     }
