@@ -7,7 +7,7 @@ namespace Compiler.Services
 {
     public class ExpressionExpanderService
     {
-        const int TEMP_IDENTIFIER = 0;
+        const int NAME = 0;
         const int OPERAND1 = 1;
         const int OPERATOR = 2;
         const int OPERAND2 = 3;
@@ -19,6 +19,7 @@ namespace Compiler.Services
         private Stack<Token> PostfixStack = new Stack<Token>();
         private Stack<Token> Operators = new Stack<Token>();
         private int Count;
+        private static string GENERATED_NAME_PREFIX = "___t";
 
         public void Push(Token token)
         {
@@ -35,11 +36,19 @@ namespace Compiler.Services
             Tokens.Clear();
             PostfixStack.Clear();
             Operators.Clear();
+        }
+
+        public void Reset()
+        {
+            Clear();
             Count = 0;
         }
 
         public void Evaluate()
         {
+            var variable = Tokens[0];
+            var assignment = Tokens[1];
+
             foreach (var token in Tokens.Skip(2))
             {
                 // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
@@ -116,10 +125,18 @@ namespace Compiler.Services
                 PostfixStack.Push(Operators.Pop());
             }
 
-            PrintExpressionList(ParsePostfixStack());
+            var result = SimplifyExpressionList(ParsePostfixStack());
+
+            var entry = CreateEntry(
+                name: variable.Lexeme,
+                operand1: result.Last()[NAME]);
+
+            result.Add(entry);
+
+            PrintExpressionList(result);
         }
 
-        private List<object[]> ParsePostfixStack()
+        private IList<object[]> ParsePostfixStack()
         {
 
             var reverseStack = this.PostfixStack.Reverse();
@@ -128,18 +145,19 @@ namespace Compiler.Services
 
             foreach (var item in reverseStack)
             {
-                var entry = new object[SIZE];
+                var entry = CreateEntry();
+
                 if (IsNumberOrVariable(item) || IsBoolean(item))
                 {
                     entry[OPERAND1] = item;
 
                     if (item.Type == TokenType.Identifier)
                     {
-                        entry[TEMP_IDENTIFIER] = item.Lexeme;
+                        entry[NAME] = item.Lexeme;
                     }
                     else
                     {
-                        entry[TEMP_IDENTIFIER] = GenerateVariableName();
+                        entry[NAME] = GenerateVariableName();
                     }
                 }
                 else if (item == Token.UNARY_MINUS || item.Type == TokenType.BooleanNot)
@@ -148,8 +166,8 @@ namespace Compiler.Services
                     var top = expressionStack.Pop();
 
                     // Create a new temporary to hold the negated value
-                    entry[TEMP_IDENTIFIER] = GenerateVariableName();
-                    entry[OPERAND1] = top[TEMP_IDENTIFIER];
+                    entry[NAME] = GenerateVariableName();
+                    entry[OPERAND1] = top[NAME];
                     entry[NEGATE_OPERAND1] = true;
                 }
                 else
@@ -157,10 +175,10 @@ namespace Compiler.Services
                     var operand2 = expressionStack.Pop();
                     var operand1 = expressionStack.Pop();
 
-                    entry[TEMP_IDENTIFIER] = GenerateVariableName();
-                    entry[OPERAND1] = operand1[TEMP_IDENTIFIER];
+                    entry[NAME] = GenerateVariableName();
+                    entry[OPERAND1] = operand1[NAME];
                     entry[OPERATOR] = item;
-                    entry[OPERAND2] = operand2[TEMP_IDENTIFIER];
+                    entry[OPERAND2] = operand2[NAME];
                 }
 
                 expressionStack.Push(entry);
@@ -177,15 +195,35 @@ namespace Compiler.Services
 
         private string GenerateVariableName()
         {
-            return $"_t{++Count}";
+            return $"{GENERATED_NAME_PREFIX}{++Count}";
         }
 
-        private static void PrintExpressionList(List<object[]> expressionList)
+        private static object[] CreateEntry(
+            object name = null, 
+            object operand1 = null, 
+            object @operator = null, 
+            object operand2 = null, 
+            object negateOperand1 = null, 
+            object negateOperand2 = null)
+        {
+            var entry = new object[SIZE];
+
+            entry[NAME] = name;
+            entry[OPERAND1] = operand1;
+            entry[OPERATOR] = @operator;
+            entry[OPERAND2] = operand2;
+            entry[NEGATE_OPERAND1] = negateOperand1;
+            entry[NEGATE_OPERAND2] = negateOperand2;
+
+            return entry;
+        }
+
+        private static void PrintExpressionList(IList<object[]> expressionList)
         {
             System.Console.WriteLine();
             foreach (var item in expressionList)
             {
-                var str = $"{item[TEMP_IDENTIFIER],10}";
+                var str = $"{item[NAME],10}";
                 var operandStr = "";
 
                 if (item[OPERAND1] is Token)
@@ -234,6 +272,21 @@ namespace Compiler.Services
                 System.Console.WriteLine(str);
             }
             System.Console.WriteLine();
+        }
+
+        private static IList<object[]> SimplifyExpressionList(IList<object[]> expressionList)
+        {
+            return expressionList.Where(exp =>
+            {
+                if (exp != null)
+                {
+                    if (exp[NAME].ToString().StartsWith(GENERATED_NAME_PREFIX))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }).ToList();
         }
 
         private static bool IsNumberOrVariable(Token token)
