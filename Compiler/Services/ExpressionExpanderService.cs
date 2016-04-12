@@ -110,7 +110,7 @@ namespace Compiler.Services
                 OutputStack.Push(Operators.Pop());
             }
 
-            // Parse();
+            Parse();
         }
 
         private string GenerateName()
@@ -156,11 +156,14 @@ namespace Compiler.Services
                 {
                     // Don't add to the list, since the effect will be handled on te stack
                     var entry = new object[SIZE];
+                    var top = expressionStack.Pop();
 
-                    entry[TEMP_IDENTIFIER] = Token.UNARY_MINUS.Lexeme;
-                    entry[OPERAND1] = Token.UNARY_MINUS;
+                    entry[TEMP_IDENTIFIER] = GenerateName();
+                    entry[OPERAND1] = top[TEMP_IDENTIFIER];
+                    entry[NEGATE_OPERAND1] = true;
 
                     expressionStack.Push(entry);
+                    expressionList.Add(entry);
                 }
                 else
                 {
