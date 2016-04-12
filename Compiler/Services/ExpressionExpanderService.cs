@@ -7,11 +7,15 @@ namespace Compiler.Services
     public class ExpressionExpanderService
     {
         private List<Token> Tokens = new List<Token>();
-        private Queue<Token> OutputQueue = new Queue<Token>();
+        private Queue<KeyValuePair<Token, bool>> OutputQueue = new Queue<KeyValuePair<Token, bool>>();
         private Stack<Token> Operators = new Stack<Token>();
+        private Stack<bool> OpenParenNegation = new Stack<bool>();
+        Token NE = Token.CreateToken("-1", -1);
 
         public void Push(Token token)
         {
+            var lastTOken = Tokens.Last();
+
             Tokens.Add(token);
         }
 
@@ -37,11 +41,12 @@ namespace Compiler.Services
                 // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
                 if (IsNumberOrVariable(token))
                 {
+                    OutputQueue.Enqueue(new KeyValuePair<Token, bool>(token, negateNextNumber));
+
                     if (negateNextNumber)
                     {
                         negateNextNumber = false;
                     }
-                    OutputQueue.Enqueue(token);
                 }
                 else if (IsArithmeticOperator(token.Type))
                 {
@@ -53,14 +58,20 @@ namespace Compiler.Services
                     {
                         // Negate
                         negateNextNumber = true;
+                        OutputQueue.Enqueue(new KeyValuePair<Token, bool>(token, negateNextNumber));
+                    }
+                    else if (token.Type == TokenType.Plus && lastTokenWasArithmethicOperator)
+                    {
+                        // Ignore
                     }
                     else
                     {
-                        // - + has lesser precedence than * /
                         // TODO: Add support for ++, --
+
+                        // - + has lesser precedence than * /
                         while (IsMultDiv(Operators.Peek().Type) && IsAddSub(token.Type))
                         {
-                            OutputQueue.Enqueue(Operators.Pop());
+                            OutputQueue.Enqueue(new KeyValuePair<Token, bool>(Operators.Pop(), false));
                         }
 
                         Operators.Push(token);
@@ -74,7 +85,7 @@ namespace Compiler.Services
                 {
                     while (Operators.Peek().Type != TokenType.OpenParen)
                     {
-                        OutputQueue.Enqueue(Operators.Pop());
+                        OutputQueue.Enqueue(new KeyValuePair<Token, bool>(Operators.Pop(), false));
                     }
 
                     Operators.Pop();
@@ -86,7 +97,7 @@ namespace Compiler.Services
             // Add remaining operators onto output queue
             while (Operators.Any())
             {
-                OutputQueue.Enqueue(Operators.Pop());
+                OutputQueue.Enqueue(new KeyValuePair<Token, bool>(Operators.Pop(), false));
             }
         }
 
