@@ -15,6 +15,8 @@ namespace Compiler.Services
 
         private Token _CurrentToken;
 
+        private ExpressionExpanderService ExpressionExpander = new ExpressionExpanderService();
+
         private Token CurrentToken
         {
             get
@@ -67,7 +69,7 @@ namespace Compiler.Services
             {
                 var errMessage = $"Error parsing token on" +
                     $" line #{LexicalAnalyzer.LineNumber}," +
-                    $" Column #{LexicalAnalyzer.Column}.\n\n" + 
+                    $" Column #{LexicalAnalyzer.Column}.\n\n" +
                     $" {ex.Message}\n\n" +
                     $" Production Path => \n\n{GetProductionPath()}\n\n";
 
@@ -372,6 +374,10 @@ namespace Compiler.Services
 
             Statement();
             MatchAndSetToken(TokenType.Semicolon);
+
+            Console.WriteLine(ExpressionExpander);
+            ExpressionExpander.Clear();
+
             StatementTail();
             PopProduction();
         }
@@ -392,6 +398,10 @@ namespace Compiler.Services
 
             Statement();
             MatchAndSetToken(TokenType.Semicolon);
+
+            Console.WriteLine(ExpressionExpander);
+            ExpressionExpander.Clear();
+
             StatementTail();
             PopProduction();
         }
@@ -420,6 +430,7 @@ namespace Compiler.Services
             PushProduction("AssignmentStatement");
             var identifier = CurrentToken.Lexeme;
 
+            ExpressionExpander.Push(CurrentToken);
             MatchAndSetToken(TokenType.Identifier);
 
             if (SymbolTable.Lookup(identifier) == null)
@@ -427,6 +438,7 @@ namespace Compiler.Services
                 throw new UndeclaredVariableException(identifier);
             }
 
+            ExpressionExpander.Push(CurrentToken);
             MatchAndSetToken(TokenType.Assignment);
             Expression();
             PopProduction();
@@ -489,6 +501,7 @@ namespace Compiler.Services
             PushProduction("MoreTerm");
             try
             {
+                ExpressionExpander.Push(CurrentToken);
                 AddOperators();
             }
             catch (MissingOptionalTokenException)
@@ -496,6 +509,7 @@ namespace Compiler.Services
                 // ε production
                 PopProduction();
                 PopProduction();
+                ExpressionExpander.Pop();
                 return;
             }
 
@@ -506,9 +520,10 @@ namespace Compiler.Services
 
         private void Factor()
         {
-            // Factor -> id | num | ( Expression ) | ! Factor | true | false | SignOperator Factor
+            // Factor -> id | num | ( Expression ) | SignOperator Factor | ! BooleanFactor | true | false
 
             var currentTokenType = CurrentToken.Type;
+            ExpressionExpander.Push(CurrentToken);
 
             PushProduction("Factor");
 
@@ -535,12 +550,13 @@ namespace Compiler.Services
             {
                 MatchAndSetToken(TokenType.OpenParen);
                 Expression();
+                ExpressionExpander.Push(CurrentToken);
                 MatchAndSetToken(TokenType.CloseParen);
             }
             else if (currentTokenType == TokenType.BooleanNot)
             {
                 MatchAndSetToken(TokenType.BooleanNot);
-                Factor();
+                BooleanFactor();
             }
             else if (currentTokenType == TokenType.True)
             {
@@ -552,12 +568,66 @@ namespace Compiler.Services
             }
             else if (currentTokenType == TokenType.Minus)
             {
+                ExpressionExpander.Pop();
+                ExpressionExpander.Push(Token.UNARY_MINUS);
                 SignOperator();
                 Factor();
             }
             else
             {
                 throw new Exception($"Unexpected token {CurrentToken.Type}, found in production ({ProductionStack.Peek()}).");
+            }
+
+            PopProduction();
+        }
+
+        private void BooleanFactor()
+        {
+            // BooleanFactor -> ! BooleanFactor | ( BooleanFactor ) | true | false | id
+            PushProduction("BooleanFactor");
+            ExpressionExpander.Push(CurrentToken);
+
+            if (CurrentToken.Type == TokenType.BooleanNot)
+            {
+                MatchAndSetToken(TokenType.BooleanNot);
+                BooleanFactor();
+            }
+            else if (CurrentToken.Type == TokenType.OpenParen)
+            {
+                MatchAndSetToken(TokenType.OpenParen);
+                BooleanFactor();
+                ExpressionExpander.Push(CurrentToken);
+                MatchAndSetToken(TokenType.CloseParen);
+            }
+            else if (CurrentToken.Type == TokenType.True)
+            {
+                MatchAndSetToken(TokenType.True);
+            }
+            else if (CurrentToken.Type == TokenType.False)
+            {
+                MatchAndSetToken(TokenType.False);
+            }
+            else if (CurrentToken.Type == TokenType.Identifier)
+            {
+                var identifier = CurrentToken.Lexeme;
+
+                MatchAndSetToken(TokenType.Identifier);
+
+                var entry = SymbolTable.Lookup(identifier);
+
+                if (entry == null)
+                {
+                    throw new UndeclaredVariableException(identifier);
+                }
+
+                if (((VariableEntry)entry.Content).DataType != VariableType.Boolean)
+                {
+                    throw new Exception($"variable [{identifier}] has to be of boolean type.");
+                }
+            }
+            else
+            {
+                throw new Exception($"Expected boolean terminal symbol, but found {CurrentToken.Type} in production ({ProductionStack.Peek()}).");
             }
 
             PopProduction();
@@ -570,6 +640,7 @@ namespace Compiler.Services
 
             try
             {
+                ExpressionExpander.Push(CurrentToken);
                 MultiplicationOperators();
             }
             catch (MissingOptionalTokenException)
@@ -577,6 +648,7 @@ namespace Compiler.Services
                 // ε production
                 PopProduction();
                 PopProduction();
+                ExpressionExpander.Pop();
                 return;
             }
 
