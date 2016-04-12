@@ -10,6 +10,7 @@ namespace Compiler.Services
         private Stack<Token> OutputStack = new Stack<Token>();
         private Stack<Token> Operators = new Stack<Token>();
         private Stack<bool> OpenParenNegation = new Stack<bool>();
+        private int Count;
 
         public void Push(Token token)
         {
@@ -99,14 +100,103 @@ namespace Compiler.Services
             {
                 OutputStack.Push(Operators.Pop());
             }
+
+            Parse();
         }
 
-        private static bool IsNumberOrVariable(Token currentToken)
+        private string GenerateName()
+        {
+            return $"_t{++Count}";
+        }
+
+        private void Parse()
+        {
+            const int TEMP_IDENTIFIER = 0;
+            const int OPERAND1 = 1;
+            const int OPERATOR = 2;
+            const int OPERAND2 = 3;
+            const int SIZE = 4;
+
+            var reverseStack = this.OutputStack.Reverse();
+            var expressionStack = new Stack<object[]>();
+            var expressionList = new List<object[]>();
+
+            foreach (var item in reverseStack)
+            {
+                if (IsNumberOrVariable(item))
+                {
+                    var entry = new object[SIZE];
+
+                    if (item.Type == TokenType.Identifier)
+                    {
+                        entry[TEMP_IDENTIFIER] = item.Lexeme;
+                    }
+                    else
+                    {
+                        entry[TEMP_IDENTIFIER] = GenerateName();
+                    }
+
+                    entry[OPERAND1] = item;
+
+                    expressionStack.Push(entry);
+                    expressionList.Add(entry);
+                }
+                else
+                {
+                    var top = expressionStack.Pop();
+                    var bottom = expressionStack.Pop();
+
+                    var entry = new object[SIZE];
+
+                    entry[TEMP_IDENTIFIER] = GenerateName();
+                    entry[OPERAND1] = bottom[TEMP_IDENTIFIER];
+                    entry[OPERATOR] = item;
+                    entry[OPERAND2] = top[TEMP_IDENTIFIER];
+
+                    expressionStack.Push(entry);
+                    expressionList.Add(entry);
+                }
+            }
+
+            foreach (var item in expressionList)
+            {
+                var str = $"{item[TEMP_IDENTIFIER],10}";
+
+                if (item[OPERAND1] is Token)
+                {
+                    str = $"{str}{((Token)item[OPERAND1]).Lexeme,15}";
+                }
+                else
+                {
+                    str = $"{str}{item[OPERAND1],15}";
+                }
+
+                if (item[OPERATOR] != null)
+                {
+                    str = $"{str}  {((Token)item[OPERATOR]).Lexeme}  ";
+
+                    if (item[OPERAND2] is string)
+                    {
+                        str = $"{str}{item[OPERAND2]}";
+                    }
+                    else
+                    {
+                        str = $"{str}{((Token)item[OPERAND2]).Lexeme}";
+                    }
+                }
+
+                System.Console.WriteLine(str);
+            }
+            System.Console.WriteLine();
+        }
+
+        private static bool IsNumberOrVariable(Token token)
         {
             return
-                currentToken.Type == TokenType.LiteralInteger ||
-                currentToken.Type == TokenType.LiteralReal ||
-                currentToken.Type == TokenType.Identifier;
+                token.Type == TokenType.LiteralInteger ||
+                token.Type == TokenType.LiteralReal ||
+                token.Type == TokenType.Identifier ||
+                token == Token.UNARY_MINUS;
         }
 
         private bool IsAddSub(TokenType type)
@@ -132,7 +222,8 @@ namespace Compiler.Services
         {
             var tab = "    ";
             Evaluate();
-            return "\n\n" + tab + string.Join($"\n{tab}", OutputStack.Reverse());
+            return $"{tab} # {OutputStack.Peek().LineNumber,-6} =>   {string.Join($" ", OutputStack.Reverse().Select(tok => tok.Lexeme))} \n\n";
+            // return "\n\n" + tab + string.Join($"\n{tab}", OutputStack.Reverse());
         }
     }
 }
