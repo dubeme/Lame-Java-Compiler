@@ -134,9 +134,9 @@ namespace Compiler.Services
 
             foreach (var item in reverseStack)
             {
+                var entry = new object[SIZE];
                 if (IsNumberOrVariable(item))
                 {
-                    var entry = new object[SIZE];
                     entry[OPERAND1] = item;
 
                     if (item.Type == TokenType.Identifier)
@@ -147,83 +147,29 @@ namespace Compiler.Services
                     {
                         entry[TEMP_IDENTIFIER] = GenerateName();
                     }
-
-
-                    expressionStack.Push(entry);
-                    expressionList.Add(entry);
                 }
                 else if (item == Token.UNARY_MINUS)
                 {
-                    // Don't add to the list, since the effect will be handled on te stack
-                    var entry = new object[SIZE];
                     var top = expressionStack.Pop();
 
+                    // Create a new temporary to hold the negated value
                     entry[TEMP_IDENTIFIER] = GenerateName();
                     entry[OPERAND1] = top[TEMP_IDENTIFIER];
                     entry[NEGATE_OPERAND1] = true;
-
-                    expressionStack.Push(entry);
-                    expressionList.Add(entry);
                 }
                 else
                 {
-                    var entry = new object[SIZE];
                     var operand2 = expressionStack.Pop();
-
-                    if (expressionStack.Any())
-                    {
-                        if ((string)expressionStack.Peek()[TEMP_IDENTIFIER] == Token.UNARY_MINUS.Lexeme)
-                        {
-                            entry[NEGATE_OPERAND2] = true;
-                            expressionStack.Pop();
-                        }
-                    }
-
                     var operand1 = expressionStack.Pop();
-
-                    if (expressionStack.Any() && item == reverseStack.Last())
-                    {
-                        // For the operand1 only use check the unary minus when only at the last item
-                        // If last item not unary, then there must be another operator
-                        if ((string)expressionStack.Peek()[TEMP_IDENTIFIER] == Token.UNARY_MINUS.Lexeme)
-                        {
-                            entry[NEGATE_OPERAND1] = true;
-                            expressionStack.Pop();
-                        }
-                    }
 
                     entry[TEMP_IDENTIFIER] = GenerateName();
                     entry[OPERAND1] = operand1[TEMP_IDENTIFIER];
                     entry[OPERATOR] = item;
                     entry[OPERAND2] = operand2[TEMP_IDENTIFIER];
-
-                    expressionStack.Push(entry);
-                    expressionList.Add(entry);
                 }
-            }
 
-            // Check whether to negate final expression
-
-            var lastExpression = expressionStack.Pop();
-
-            if (expressionStack.Any())
-            {
-                if ((string)expressionStack.Peek()[TEMP_IDENTIFIER] == Token.UNARY_MINUS.Lexeme)
-                {
-                    expressionStack.Pop();
-
-                    var entry = new object[SIZE];
-                    entry[TEMP_IDENTIFIER] = lastExpression[TEMP_IDENTIFIER];
-                    entry[OPERAND1] = lastExpression[TEMP_IDENTIFIER];
-                    entry[NEGATE_OPERAND1] = true;
-
-                    // Add the negated final expression
-                    expressionList.Add(entry);
-                }
-                else
-                {
-                    throw new Exception("Invalid expression");
-                }
+                expressionStack.Push(entry);
+                expressionList.Add(entry);
             }
 
             PrintExpressionList(TEMP_IDENTIFIER, OPERAND1, OPERATOR, OPERAND2, NEGATE_OPERAND1, NEGATE_OPERAND2, expressionList);
@@ -249,11 +195,11 @@ namespace Compiler.Services
                 // Add visual indicator for negation
                 if (item[NEGATE_OPERAND1] != null && (bool)item[NEGATE_OPERAND1])
                 {
-                    operandStr = $"{"[" + operandStr + "]", 15 }";
+                    operandStr = $"{"[" + operandStr + "]",15 }";
                 }
                 else
                 {
-                    operandStr = $"{operandStr, 15 }";
+                    operandStr = $"{operandStr,15 }";
                 }
 
                 str = $"{str}{operandStr}";
@@ -316,7 +262,7 @@ namespace Compiler.Services
         {
             Evaluate();
             var tab = "    ";
-            var lineNumber = !OutputStack.Any() ? -1 : 
+            var lineNumber = !OutputStack.Any() ? -1 :
                 OutputStack.First(t => t.LineNumber != Token.UNARY_MINUS.LineNumber).LineNumber;
             return $"{tab} # {lineNumber} =>   {string.Join($" ", OutputStack.Reverse().Select(tok => tok.Lexeme))}\n";
             // return "\n\n" + tab + string.Join($"\n{tab}", OutputStack.Reverse());
