@@ -1,5 +1,4 @@
 ﻿using Compiler.Models;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,13 +9,10 @@ namespace Compiler.Services
         private List<Token> Tokens = new List<Token>();
         private Stack<Token> OutputStack = new Stack<Token>();
         private Stack<Token> Operators = new Stack<Token>();
-        private Stack<bool> OpenParenNegation = new Stack<bool>();
         private int Count;
 
         public void Push(Token token)
         {
-            // var lastTOken = Tokens.Last();
-
             Tokens.Add(token);
         }
 
@@ -30,6 +26,7 @@ namespace Compiler.Services
             Tokens.Clear();
             OutputStack.Clear();
             Operators.Clear();
+            Count = 0;
         }
 
         public void Evaluate()
@@ -113,7 +110,7 @@ namespace Compiler.Services
             Parse();
         }
 
-        private string GenerateName()
+        private string GenerateVariableName()
         {
             return $"_t{++Count}";
         }
@@ -135,7 +132,7 @@ namespace Compiler.Services
             foreach (var item in reverseStack)
             {
                 var entry = new object[SIZE];
-                if (IsNumberOrVariable(item))
+                if (IsNumberOrVariable(item) || IsBoolean(item))
                 {
                     entry[OPERAND1] = item;
 
@@ -145,15 +142,16 @@ namespace Compiler.Services
                     }
                     else
                     {
-                        entry[TEMP_IDENTIFIER] = GenerateName();
+                        entry[TEMP_IDENTIFIER] = GenerateVariableName();
                     }
                 }
-                else if (item == Token.UNARY_MINUS)
+                else if (item == Token.UNARY_MINUS || item.Type == TokenType.BooleanNot)
                 {
+                    // Negation central
                     var top = expressionStack.Pop();
 
                     // Create a new temporary to hold the negated value
-                    entry[TEMP_IDENTIFIER] = GenerateName();
+                    entry[TEMP_IDENTIFIER] = GenerateVariableName();
                     entry[OPERAND1] = top[TEMP_IDENTIFIER];
                     entry[NEGATE_OPERAND1] = true;
                 }
@@ -162,7 +160,7 @@ namespace Compiler.Services
                     var operand2 = expressionStack.Pop();
                     var operand1 = expressionStack.Pop();
 
-                    entry[TEMP_IDENTIFIER] = GenerateName();
+                    entry[TEMP_IDENTIFIER] = GenerateVariableName();
                     entry[OPERAND1] = operand1[TEMP_IDENTIFIER];
                     entry[OPERATOR] = item;
                     entry[OPERAND2] = operand2[TEMP_IDENTIFIER];
@@ -239,17 +237,22 @@ namespace Compiler.Services
                 token.Type == TokenType.Identifier;
         }
 
-        private bool IsAddSub(TokenType type)
+        private static bool IsBoolean(Token item)
+        {
+            return item.Type == TokenType.True || item.Type == TokenType.False;
+        }
+
+        private static bool IsAddSub(TokenType type)
         {
             return type == TokenType.Plus || type == TokenType.Minus;
         }
 
-        private bool IsMultDiv(TokenType type)
+        private static bool IsMultDiv(TokenType type)
         {
             return type == TokenType.Multiplication || type == TokenType.Divide;
         }
 
-        private bool IsArithmeticOperator(TokenType type)
+        private static bool IsArithmeticOperator(TokenType type)
         {
             return
                 type == TokenType.Multiplication ||
