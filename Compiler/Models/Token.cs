@@ -32,6 +32,12 @@ namespace Compiler.Models
             }
         }
 
+        public static readonly Token UNARY_MINUS = new Token
+        {
+            Lexeme = "unary_minus",
+            LineNumber = -1
+        };
+
         /// <summary>
         /// Gets or sets the type of this Token.
         /// </summary>
