@@ -44,18 +44,26 @@ namespace Compiler.Services
                 else if (token == Token.UNARY_MINUS)
                 {
                     // Unary minus (Negation)
-                    OutputStack.Push(token);
-                }
-                else if (token.Type == TokenType.BooleanNot)
-                {
-                    if (OutputStack.Any() && OutputStack.Peek().Type == TokenType.BooleanNot)
+                    if (Operators.Any() && Operators.Peek() == Token.UNARY_MINUS)
                     {
-                        // !! => cancels out
-                        OutputStack.Pop();
+                        // -- => cancels out
+                        Operators.Pop();
                     }
                     else
                     {
-                        OutputStack.Push(token);
+                        Operators.Push(token);
+                    }
+                }
+                else if (token.Type == TokenType.BooleanNot)
+                {
+                    if (Operators.Any() && Operators.Peek().Type == TokenType.BooleanNot)
+                    {
+                        // !! => cancels out
+                        Operators.Pop();
+                    }
+                    else
+                    {
+                        Operators.Push(token);
                     }
                 }
                 else if (token.Type == TokenType.True || token.Type == TokenType.False)
@@ -102,7 +110,7 @@ namespace Compiler.Services
                 OutputStack.Push(Operators.Pop());
             }
 
-            Parse();
+            // Parse();
         }
 
         private string GenerateName()
@@ -129,6 +137,7 @@ namespace Compiler.Services
                 if (IsNumberOrVariable(item))
                 {
                     var entry = new object[SIZE];
+                    entry[OPERAND1] = item;
 
                     if (item.Type == TokenType.Identifier)
                     {
@@ -139,7 +148,6 @@ namespace Compiler.Services
                         entry[TEMP_IDENTIFIER] = GenerateName();
                     }
 
-                    entry[OPERAND1] = item;
 
                     expressionStack.Push(entry);
                     expressionList.Add(entry);
@@ -170,9 +178,9 @@ namespace Compiler.Services
 
                     var operand1 = expressionStack.Pop();
 
-                    if (expressionStack.Any() && expressionStack.Count == 1)
+                    if (expressionStack.Any() && item == reverseStack.Last())
                     {
-                        // For the operand1 only use check the unary minus when only one item is left
+                        // For the operand1 only use check the unary minus when only at the last item
                         // If last item not unary, then there must be another operator
                         if ((string)expressionStack.Peek()[TEMP_IDENTIFIER] == Token.UNARY_MINUS.Lexeme)
                         {
@@ -199,11 +207,15 @@ namespace Compiler.Services
             {
                 if ((string)expressionStack.Peek()[TEMP_IDENTIFIER] == Token.UNARY_MINUS.Lexeme)
                 {
-                    lastExpression[NEGATE_OPERAND1] = true;
                     expressionStack.Pop();
 
+                    var entry = new object[SIZE];
+                    entry[TEMP_IDENTIFIER] = lastExpression[TEMP_IDENTIFIER];
+                    entry[OPERAND1] = lastExpression[TEMP_IDENTIFIER];
+                    entry[NEGATE_OPERAND1] = true;
+
                     // Add the negated final expression
-                    expressionList.Add(lastExpression);
+                    expressionList.Add(entry);
                 }
                 else
                 {
@@ -299,9 +311,11 @@ namespace Compiler.Services
 
         public override string ToString()
         {
-            var tab = "    ";
             Evaluate();
-            return $"{tab} # {OutputStack.Peek().LineNumber,-6} =>   {string.Join($" ", OutputStack.Reverse().Select(tok => tok.Lexeme))}\n";
+            var tab = "    ";
+            var lineNumber = !OutputStack.Any() ? -1 : 
+                OutputStack.First(t => t.LineNumber != Token.UNARY_MINUS.LineNumber).LineNumber;
+            return $"{tab} # {lineNumber} =>   {string.Join($" ", OutputStack.Reverse().Select(tok => tok.Lexeme))}\n";
             // return "\n\n" + tab + string.Join($"\n{tab}", OutputStack.Reverse());
         }
     }
