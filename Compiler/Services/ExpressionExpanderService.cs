@@ -7,14 +7,14 @@ namespace Compiler.Services
     public class ExpressionExpanderService
     {
         private List<Token> Tokens = new List<Token>();
-        private Queue<KeyValuePair<Token, bool>> OutputQueue = new Queue<KeyValuePair<Token, bool>>();
+        private Queue<Token> OutputQueue = new Queue<Token>();
         private Stack<Token> Operators = new Stack<Token>();
         private Stack<bool> OpenParenNegation = new Stack<bool>();
-        Token NE = Token.CreateToken("-1", -1);
+        private Token NegativeOne = Token.CreateToken("-1", -1);
 
         public void Push(Token token)
         {
-            var lastTOken = Tokens.Last();
+            // var lastTOken = Tokens.Last();
 
             Tokens.Add(token);
         }
@@ -34,31 +34,33 @@ namespace Compiler.Services
         public void Evaluate()
         {
             var lastTokenWasArithmethicOperator = false;
-            var negateNextNumber = false;
 
             foreach (var token in Tokens.Skip(2))
             {
                 // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
                 if (IsNumberOrVariable(token))
                 {
-                    OutputQueue.Enqueue(new KeyValuePair<Token, bool>(token, negateNextNumber));
-
-                    if (negateNextNumber)
-                    {
-                        negateNextNumber = false;
-                    }
+                    OutputQueue.Enqueue(token);
                 }
                 else if (IsArithmeticOperator(token.Type))
                 {
                     if (!Operators.Any())
                     {
-                        Operators.Push(token);
+                        // If first operator is -, and nothing in the OutputQueue
+                        if (token.Type == TokenType.Minus && !OutputQueue.Any())
+                        {
+                            // Negate, NegativeOne will tell the parser to negate the next number
+                            OutputQueue.Enqueue(NegativeOne);
+                        }
+                        else
+                        {
+                            Operators.Push(token);
+                        }
                     }
                     else if (token.Type == TokenType.Minus && lastTokenWasArithmethicOperator)
                     {
-                        // Negate
-                        negateNextNumber = true;
-                        OutputQueue.Enqueue(new KeyValuePair<Token, bool>(token, negateNextNumber));
+                        // Negate, NegativeOne will tell the parser to negate the next number
+                        OutputQueue.Enqueue(NegativeOne);
                     }
                     else if (token.Type == TokenType.Plus && lastTokenWasArithmethicOperator)
                     {
@@ -71,7 +73,7 @@ namespace Compiler.Services
                         // - + has lesser precedence than * /
                         while (IsMultDiv(Operators.Peek().Type) && IsAddSub(token.Type))
                         {
-                            OutputQueue.Enqueue(new KeyValuePair<Token, bool>(Operators.Pop(), false));
+                            OutputQueue.Enqueue(Operators.Pop());
                         }
 
                         Operators.Push(token);
@@ -85,7 +87,7 @@ namespace Compiler.Services
                 {
                     while (Operators.Peek().Type != TokenType.OpenParen)
                     {
-                        OutputQueue.Enqueue(new KeyValuePair<Token, bool>(Operators.Pop(), false));
+                        OutputQueue.Enqueue(Operators.Pop());
                     }
 
                     Operators.Pop();
@@ -97,7 +99,7 @@ namespace Compiler.Services
             // Add remaining operators onto output queue
             while (Operators.Any())
             {
-                OutputQueue.Enqueue(new KeyValuePair<Token, bool>(Operators.Pop(), false));
+                OutputQueue.Enqueue(Operators.Pop());
             }
         }
 
