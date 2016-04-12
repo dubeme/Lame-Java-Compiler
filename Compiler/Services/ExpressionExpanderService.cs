@@ -1,4 +1,5 @@
 ﻿using Compiler.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -115,7 +116,9 @@ namespace Compiler.Services
             const int OPERAND1 = 1;
             const int OPERATOR = 2;
             const int OPERAND2 = 3;
-            const int SIZE = 4;
+            const int NEGATE_OPERAND1 = 4;
+            const int NEGATE_OPERAND2 = 5;
+            const int SIZE = 6;
 
             var reverseStack = this.OutputStack.Reverse();
             var expressionStack = new Stack<object[]>();
@@ -141,35 +144,104 @@ namespace Compiler.Services
                     expressionStack.Push(entry);
                     expressionList.Add(entry);
                 }
-                else
+                else if (item == Token.UNARY_MINUS)
                 {
-                    var top = expressionStack.Pop();
-                    var bottom = expressionStack.Pop();
-
+                    // Don't add to the list, since the effect will be handled on te stack
                     var entry = new object[SIZE];
 
+                    entry[TEMP_IDENTIFIER] = Token.UNARY_MINUS.Lexeme;
+                    entry[OPERAND1] = Token.UNARY_MINUS;
+
+                    expressionStack.Push(entry);
+                }
+                else
+                {
+                    var entry = new object[SIZE];
+                    var operand2 = expressionStack.Pop();
+
+                    if (expressionStack.Any())
+                    {
+                        if ((string)expressionStack.Peek()[TEMP_IDENTIFIER] == Token.UNARY_MINUS.Lexeme)
+                        {
+                            entry[NEGATE_OPERAND2] = true;
+                            expressionStack.Pop();
+                        }
+                    }
+
+                    var operand1 = expressionStack.Pop();
+
+                    if (expressionStack.Any() && expressionStack.Count == 1)
+                    {
+                        // For the operand1 only use check the unary minus when only one item is left
+                        // If last item not unary, then there must be another operator
+                        if ((string)expressionStack.Peek()[TEMP_IDENTIFIER] == Token.UNARY_MINUS.Lexeme)
+                        {
+                            entry[NEGATE_OPERAND1] = true;
+                            expressionStack.Pop();
+                        }
+                    }
+
                     entry[TEMP_IDENTIFIER] = GenerateName();
-                    entry[OPERAND1] = bottom[TEMP_IDENTIFIER];
+                    entry[OPERAND1] = operand1[TEMP_IDENTIFIER];
                     entry[OPERATOR] = item;
-                    entry[OPERAND2] = top[TEMP_IDENTIFIER];
+                    entry[OPERAND2] = operand2[TEMP_IDENTIFIER];
 
                     expressionStack.Push(entry);
                     expressionList.Add(entry);
                 }
             }
 
-            foreach (var item in expressionList)
-            {
-                var str = $"{item[TEMP_IDENTIFIER],10}";
+            // Check whether to negate final expression
 
-                if (item[OPERAND1] is Token)
+            var lastExpression = expressionStack.Pop();
+
+            if (expressionStack.Any())
+            {
+                if ((string)expressionStack.Peek()[TEMP_IDENTIFIER] == Token.UNARY_MINUS.Lexeme)
                 {
-                    str = $"{str}{((Token)item[OPERAND1]).Lexeme,15}";
+                    lastExpression[NEGATE_OPERAND1] = true;
+                    expressionStack.Pop();
+
+                    // Add the negated final expression
+                    expressionList.Add(lastExpression);
                 }
                 else
                 {
-                    str = $"{str}{item[OPERAND1],15}";
+                    throw new Exception("Invalid expression");
                 }
+            }
+
+            PrintExpressionList(TEMP_IDENTIFIER, OPERAND1, OPERATOR, OPERAND2, NEGATE_OPERAND1, NEGATE_OPERAND2, expressionList);
+        }
+
+        private static void PrintExpressionList(int TEMP_IDENTIFIER, int OPERAND1, int OPERATOR, int OPERAND2, int NEGATE_OPERAND1, int NEGATE_OPERAND2, List<object[]> expressionList)
+        {
+            System.Console.WriteLine();
+            foreach (var item in expressionList)
+            {
+                var str = $"{item[TEMP_IDENTIFIER],10}";
+                var operandStr = "";
+
+                if (item[OPERAND1] is Token)
+                {
+                    operandStr = $"{((Token)item[OPERAND1]).Lexeme}";
+                }
+                else
+                {
+                    operandStr = $"{item[OPERAND1]}";
+                }
+
+                // Add visual indicator for negation
+                if (item[NEGATE_OPERAND1] != null && (bool)item[NEGATE_OPERAND1])
+                {
+                    operandStr = $"{"[" + operandStr + "]", 15 }";
+                }
+                else
+                {
+                    operandStr = $"{operandStr, 15 }";
+                }
+
+                str = $"{str}{operandStr}";
 
                 if (item[OPERATOR] != null)
                 {
@@ -177,12 +249,20 @@ namespace Compiler.Services
 
                     if (item[OPERAND2] is string)
                     {
-                        str = $"{str}{item[OPERAND2]}";
+                        operandStr = $"{item[OPERAND2]}";
                     }
                     else
                     {
-                        str = $"{str}{((Token)item[OPERAND2]).Lexeme}";
+                        operandStr = $"{((Token)item[OPERAND2]).Lexeme}";
                     }
+
+                    // Add visual indicator for negation
+                    if (item[NEGATE_OPERAND2] != null && (bool)item[NEGATE_OPERAND2])
+                    {
+                        operandStr = $"[{operandStr}]";
+                    }
+
+                    str = $"{str}{operandStr}";
                 }
 
                 System.Console.WriteLine(str);
@@ -195,8 +275,7 @@ namespace Compiler.Services
             return
                 token.Type == TokenType.LiteralInteger ||
                 token.Type == TokenType.LiteralReal ||
-                token.Type == TokenType.Identifier ||
-                token == Token.UNARY_MINUS;
+                token.Type == TokenType.Identifier;
         }
 
         private bool IsAddSub(TokenType type)
@@ -222,7 +301,7 @@ namespace Compiler.Services
         {
             var tab = "    ";
             Evaluate();
-            return $"{tab} # {OutputStack.Peek().LineNumber,-6} =>   {string.Join($" ", OutputStack.Reverse().Select(tok => tok.Lexeme))} \n\n";
+            return $"{tab} # {OutputStack.Peek().LineNumber,-6} =>   {string.Join($" ", OutputStack.Reverse().Select(tok => tok.Lexeme))}\n";
             // return "\n\n" + tab + string.Join($"\n{tab}", OutputStack.Reverse());
         }
     }
