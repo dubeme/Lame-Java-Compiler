@@ -1,13 +1,37 @@
 class calculator {
     int x, y, z;
-    public void add(int a, int b){
+    
+    public int tester(int a, int b){
+        int ans; 
+        ans = a + b;
+        return -1;
+    }
+    
+    public int sum(int a, int b){
+        int ans; 
+        ans = a + b;
+        return ans;
+    }
+    
+    public int sub(int c, int d){
+        return c - d;
+    }
+    
+    public float quadratic(float a, float b, float c, float x) {
+        float ans;
+        ans = a*x*x + b*x + c;
+        
+        return ans;
+    }
+    
+    public void alot(int a, int b){
         int sum,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z; 
         boolean bool;
         a= 5;
         b= 10;
         c= a + b;
         sum = - - - 2;
-        sum = 3 - - - - - - 5;
+        /*sum = 3 - - - - - - 5;
         sum = 3 + 4 * 2 / ( 1 - 5 )*(2)/2+(3);
         sum = 3 + 4 * 2 / ( 1 - 5 )*2/2+3;
         sum = 3 + 4 * 2 / 1 - 5*2/2+3;
@@ -23,8 +47,8 @@ class calculator {
         sum = !!!!!(false);
         sum = (2)+(3*4)- -(((a)));
         sum = 3 * a + b / 5;
-        sum = a + b;
-        return sum;
+        sum = a + b;*/
+        return ;
     }
     public void magic(int a, int b){
         int ans; 

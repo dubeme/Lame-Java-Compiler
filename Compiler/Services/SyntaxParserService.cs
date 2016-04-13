@@ -300,6 +300,10 @@ namespace Compiler.Services
                 MatchAndSetToken(TokenType.Semicolon);
                 MatchAndSetToken(TokenType.CloseCurlyBrace);
 
+                Console.WriteLine("Exiting method declaration");
+                Console.WriteLine(ExpressionExpander);
+                ExpressionExpander.Reset();
+
                 // Exit current scope
                 PerformScopeExitAction();
 
