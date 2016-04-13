@@ -7,13 +7,13 @@ namespace Compiler.Services
 {
     public class ExpressionExpanderService
     {
-        const int NAME = 0;
-        const int OPERAND1 = 1;
-        const int OPERATOR = 2;
-        const int OPERAND2 = 3;
-        const int NEGATE_OPERAND1 = 4;
-        const int NEGATE_OPERAND2 = 5;
-        const int SIZE = 6;
+        private const int NAME = 0;
+        private const int OPERAND1 = 1;
+        private const int OPERATOR = 2;
+        private const int OPERAND2 = 3;
+        private const int NEGATE_OPERAND1 = 4;
+        private const int NEGATE_OPERAND2 = 5;
+        private const int SIZE = 6;
 
         private List<Token> Tokens = new List<Token>();
         private Stack<Token> PostfixStack = new Stack<Token>();
@@ -46,10 +46,44 @@ namespace Compiler.Services
 
         public void Evaluate()
         {
-            var variable = Tokens[0];
-            var assignment = Tokens[1];
+            if (!Tokens.Any() || Tokens.Count == 0)
+            {
+                return;
+            }
 
-            foreach (var token in Tokens.Skip(2))
+            if (Tokens.Count == 1)
+            {
+                ShuntYardToPostFix(Tokens);
+                PrintExpressionList(ParsePostfixStack());
+            }
+            else
+            {
+                var variableToken = Tokens[0];
+                var assignmentToken = Tokens[1];
+
+                if (variableToken.Type == TokenType.Identifier && assignmentToken.Type == TokenType.Assignment)
+                {
+                    ShuntYardToPostFix(Tokens.Skip(2));
+
+                    var result = SimplifyExpressionList(ParsePostfixStack());
+                    var entry = CreateEntry(
+                        name: variableToken.Lexeme,
+                        operand1: result.Last()[NAME]);
+
+                    result.Add(entry);
+                    PrintExpressionList(result);
+                }
+                else
+                {
+                    ShuntYardToPostFix(Tokens);
+                    PrintExpressionList(ParsePostfixStack());
+                }
+            }
+        }
+
+        private void ShuntYardToPostFix(IEnumerable<Token> tokens)
+        {
+            foreach (var token in tokens)
             {
                 // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
                 if (IsNumberOrVariable(token))
@@ -124,21 +158,10 @@ namespace Compiler.Services
             {
                 PostfixStack.Push(Operators.Pop());
             }
-
-            var result = SimplifyExpressionList(ParsePostfixStack());
-
-            var entry = CreateEntry(
-                name: variable.Lexeme,
-                operand1: result.Last()[NAME]);
-
-            result.Add(entry);
-
-            PrintExpressionList(result);
         }
 
         private IList<object[]> ParsePostfixStack()
         {
-
             var reverseStack = this.PostfixStack.Reverse();
             var expressionStack = new Stack<object[]>();
             var expressionList = new List<object[]>();
@@ -199,11 +222,11 @@ namespace Compiler.Services
         }
 
         private static object[] CreateEntry(
-            object name = null, 
-            object operand1 = null, 
-            object @operator = null, 
-            object operand2 = null, 
-            object negateOperand1 = null, 
+            object name = null,
+            object operand1 = null,
+            object @operator = null,
+            object operand2 = null,
+            object negateOperand1 = null,
             object negateOperand2 = null)
         {
             var entry = new object[SIZE];
