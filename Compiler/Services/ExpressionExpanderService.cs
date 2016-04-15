@@ -20,7 +20,7 @@ namespace Compiler.Services
         private const int INVALID_MODE = -1;
         public const int RETURN_EXPRESSION = 0;
         public const int ASSIGNMENT = 1;
-        public const int METHODC_ALL = 2;
+        public const int ASSIGNMENT_VIA_METHOD_CALL = 2;
 
         private List<Token> Tokens = new List<Token>();
         private Stack<Token> PostfixStack = new Stack<Token>();
@@ -64,7 +64,7 @@ namespace Compiler.Services
 
         private string Evaluate()
         {
-            if (Mode == ExpressionExpanderService.RETURN_EXPRESSION)
+            if (Mode == RETURN_EXPRESSION)
             {
                 ShuntYardToPostFix(Tokens);
                 var res = ParsePostfixStack();
@@ -72,11 +72,27 @@ namespace Compiler.Services
                 res.Last()[NAME] = RETURN_REGISTER;
                 return StringifyExpressionList(SimplifyExpressionList(res));
             }
-            else if (Mode == ExpressionExpanderService.METHODC_ALL)
+            else if (Mode == ASSIGNMENT_VIA_METHOD_CALL)
             {
-                return "METHOD_CALL";
+                var variableToken = Tokens[0];
+                var assignmentToken = Tokens[1];
+                var classToken = Tokens[2];
+                var methodToken = Tokens[3];
+                var parameters = Tokens.Skip(4).Reverse();
+                var str = new StringBuilder();
+
+                foreach (var parameter in parameters)
+                {
+                    str.AppendLine($"push {parameter.Lexeme}");
+                }
+
+                str.AppendLine($"call {methodToken.Lexeme}");
+                str.Append($"{variableToken.Lexeme} = _AX");
+
+                return str.ToString();
+
             }
-            else if (Mode == ExpressionExpanderService.ASSIGNMENT)
+            else if (Mode == ASSIGNMENT)
             {
                 var variableToken = Tokens[0];
                 var assignmentToken = Tokens[1];

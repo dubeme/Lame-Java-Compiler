@@ -70,7 +70,7 @@
     <Compile Include="Services\ExpressionExpanderService.cs" />
     <Compile Include="Services\LexicalAnalyzerService.cs" />
     <Compile Include="Services\SyntaxParserService.cs" />
-    <Compile Include="Models\Exceptions\UndeclaredVariableException.cs" />
+    <Compile Include="Models\Exceptions\UndeclaredIdentifierException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

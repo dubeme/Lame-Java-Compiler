@@ -431,7 +431,7 @@ namespace Compiler.Services
             }
             else
             {
-                ExpressionExpander.Mode = ExpressionExpanderService.METHODC_ALL;
+                ExpressionExpander.Mode = ExpressionExpanderService.ASSIGNMENT_VIA_METHOD_CALL;
                 IOStatement();
             }
             PopProduction();
@@ -453,7 +453,42 @@ namespace Compiler.Services
 
             ExpressionExpander.Push(CurrentToken);
             MatchAndSetToken(TokenType.Assignment);
-            Expression();
+
+            if (CurrentToken.Type == TokenType.Identifier)
+            {
+                var entry = SymbolTable.Lookup(CurrentToken.Lexeme);
+
+                if (entry == null)
+                {
+                    throw new UndeclaredIdentifierException(identifier);
+                }
+
+                switch (entry.Type)
+                {
+                    case EntryType.Variable:
+                        // An assignment with method expression
+                        ExpressionExpander.Mode = ExpressionExpanderService.ASSIGNMENT;
+                        Expression();
+                        break;
+
+                    case EntryType.Class:
+                        // Assignment with method call
+                        // Since methods are called as if they're static
+                        ExpressionExpander.Mode = ExpressionExpanderService.ASSIGNMENT_VIA_METHOD_CALL;
+                        MethodCall();
+                        break;
+
+                    default:
+                        throw new Exception("Invalid operation");
+                }
+            }
+            else
+            {
+                // An assignment with expression
+                ExpressionExpander.Mode = ExpressionExpanderService.ASSIGNMENT;
+                Expression();
+            }
+
             PopProduction();
         }
 
@@ -462,9 +497,37 @@ namespace Compiler.Services
             // MethodCall		->	ClassName.idt ( Parameters )
             PushProduction("MethodCall");
 
+            var className = CurrentToken.Lexeme;
+
             ClassName();
             MatchAndSetToken(TokenType.Dot);
+
+            var methodName = CurrentToken.Lexeme;
+            ExpressionExpander.Push(CurrentToken);
             MatchAndSetToken(TokenType.Identifier);
+
+            var classEntry = SymbolTable.Lookup(className);
+            if (classEntry == null)
+            {
+                throw new UndeclaredIdentifierException(className);
+            }
+            else
+            {
+                var methodNames = ((ClassEntry)classEntry.Content).MethodNames;
+                var found = false;
+
+                while (methodNames != null && !found)
+                {
+                    found = methodName == methodNames.Value;
+                    methodNames = methodNames.Next;
+                }
+
+                if (!found)
+                {
+                    throw new UndeclaredIdentifierException(methodName);
+                }
+            }
+
             MatchAndSetToken(TokenType.OpenParen);
             Parameters();
             MatchAndSetToken(TokenType.CloseParen);
@@ -478,6 +541,7 @@ namespace Compiler.Services
             PushProduction("ClassName");
 
             var identifier = CurrentToken.Lexeme;
+            ExpressionExpander.Push(CurrentToken);
             MatchAndSetToken(TokenType.Identifier);
 
             if (SymbolTable.Lookup(identifier) == null)
@@ -492,9 +556,10 @@ namespace Compiler.Services
         {
             // Parameters		->	idt ParameterTail | num ParameterTail| ε
             PushProduction("Parameters");
-            
+
             try
             {
+                ExpressionExpander.Push(CurrentToken);
                 SetTokenIfAnyMatch(
                         TokenType.Identifier,
                         TokenType.LiteralInteger,
@@ -503,6 +568,7 @@ namespace Compiler.Services
             catch (MissingOptionalTokenException)
             {
                 // ε production
+                ExpressionExpander.Pop();
                 PopProduction();
                 return;
             }
@@ -523,6 +589,7 @@ namespace Compiler.Services
             }
 
             MatchAndSetToken(TokenType.Comma);
+            ExpressionExpander.Push(CurrentToken);
             SetTokenIfAnyMatch(
                 TokenType.Identifier,
                 TokenType.LiteralInteger,
