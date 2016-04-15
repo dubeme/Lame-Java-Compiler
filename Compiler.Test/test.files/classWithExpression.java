@@ -1,6 +1,10 @@
 class calculator {
     int x, y, z;
     
+    public int s_ub(int c, int d){
+        return 1 - d;
+    }
+    
     public int tester(int a, int b){
         int ans; 
         ans = a + b;

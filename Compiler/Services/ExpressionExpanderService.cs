@@ -1,7 +1,9 @@
 ﻿using Compiler.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Compiler.Services
 {
@@ -15,11 +17,18 @@ namespace Compiler.Services
         private const int NEGATE_OPERAND2 = 5;
         private const int SIZE = 6;
 
+        private const int INVALID_MODE = -1;
+        public const int JUST_AN_EXPRESSION = 0;
+        public const int ASSIGNMENT = 1;
+        public const int METHODC_ALL = 2;
+
         private List<Token> Tokens = new List<Token>();
         private Stack<Token> PostfixStack = new Stack<Token>();
         private Stack<Token> Operators = new Stack<Token>();
-        private int Count;
-        private static string GENERATED_NAME_PREFIX = "___t";
+        private int VariableNameCount;
+        private static string GENERATED_NAME_PREFIX = "__t";
+
+        public int Mode { get; set; }
 
         public void Push(Token token)
         {
@@ -36,48 +45,49 @@ namespace Compiler.Services
             Tokens.Clear();
             PostfixStack.Clear();
             Operators.Clear();
+            Mode = INVALID_MODE;
         }
 
         public void Reset()
         {
             Clear();
-            Count = 0;
+            VariableNameCount = 0;
         }
 
-        public void Evaluate()
+        public void DumpIntermediateCode(TextWriter t)
         {
-            if (!Tokens.Any() || Tokens.Count == 0)
-            {
-                return;
-            }
+            t.WriteLine(Evaluate());
+        }
 
-            if (Tokens.Count == 1)
+        private string Evaluate()
+        {
+            if (Mode == ExpressionExpanderService.JUST_AN_EXPRESSION)
             {
                 ShuntYardToPostFix(Tokens);
-                PrintExpressionList(ParsePostfixStack());
+                return StringifyExpressionList(ParsePostfixStack());
             }
-            else
+            else if (Mode == ExpressionExpanderService.METHODC_ALL)
+            {
+                return "METHOD_CALL";
+            }
+            else if (Mode == ExpressionExpanderService.ASSIGNMENT)
             {
                 var variableToken = Tokens[0];
                 var assignmentToken = Tokens[1];
 
-                if (variableToken.Type == TokenType.Identifier && assignmentToken.Type == TokenType.Assignment)
-                {
-                    ShuntYardToPostFix(Tokens.Skip(2));
+                ShuntYardToPostFix(Tokens.Skip(2));
 
-                    var result = SimplifyExpressionList(ParsePostfixStack());
-                    var entry = CreateEntry(
-                        name: variableToken.Lexeme,
-                        operand1: result.Last()[NAME]);
+                var result = SimplifyExpressionList(ParsePostfixStack());
+                var entry = CreateEntry(
+                    name: variableToken.Lexeme,
+                    operand1: result.Last()[NAME]);
 
-                    result.Add(entry);
-                    PrintExpressionList(result);
-                }
-                else
-                {
-                    ShuntYardToPostFix(Tokens);
-                    PrintExpressionList(ParsePostfixStack());
-                }
+                result.Add(entry);
+                return StringifyExpressionList(result);
+            }
+            else
+            {
+                throw new Exception($"Invalid Mode - {Mode}");
             }
         }
 
@@ -218,7 +228,7 @@ namespace Compiler.Services
 
         private string GenerateVariableName()
         {
-            return $"{GENERATED_NAME_PREFIX}{++Count}";
+            return $"{GENERATED_NAME_PREFIX}{++VariableNameCount}";
         }
 
         private static object[] CreateEntry(
@@ -241,12 +251,14 @@ namespace Compiler.Services
             return entry;
         }
 
-        private static void PrintExpressionList(IList<object[]> expressionList)
+        private static string StringifyExpressionList(IList<object[]> expressionList)
         {
-            System.Console.WriteLine();
+            var res = new StringBuilder();
+            res.AppendLine();
+
             foreach (var item in expressionList)
             {
-                var str = $"{item[NAME],10}";
+                var str = $"{item[NAME],10} = ";
                 var operandStr = "";
 
                 if (item[OPERAND1] is Token)
@@ -292,9 +304,11 @@ namespace Compiler.Services
                     str = $"{str}{operandStr}";
                 }
 
-                System.Console.WriteLine(str);
+                res.AppendLine(str);
             }
-            System.Console.WriteLine();
+            res.AppendLine();
+
+            return res.ToString();
         }
 
         private static IList<object[]> SimplifyExpressionList(IList<object[]> expressionList)
@@ -346,10 +360,13 @@ namespace Compiler.Services
 
         public override string ToString()
         {
-            Evaluate();
+            if (!PostfixStack.Any())
+            {
+                return string.Empty;
+            }
+
             var tab = "    ";
-            var lineNumber = !PostfixStack.Any() ? -1 :
-                PostfixStack.First(t => t.LineNumber != Token.UNARY_MINUS.LineNumber).LineNumber;
+            var lineNumber = PostfixStack.First(t => t.LineNumber != Token.UNARY_MINUS.LineNumber).LineNumber;
             return $"{tab} # {lineNumber} =>   {string.Join($" ", PostfixStack.Reverse().Select(tok => tok.Lexeme))}\n";
             // return "\n\n" + tab + string.Join($"\n{tab}", OutputStack.Reverse());
         }

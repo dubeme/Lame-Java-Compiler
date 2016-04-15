@@ -293,6 +293,7 @@ namespace Compiler.Services
                 }
                 else
                 {
+                    ExpressionExpander.Mode = ExpressionExpanderService.JUST_AN_EXPRESSION;
                     MatchAndSetToken(TokenType.Return);
                     Expression();
                 }
@@ -301,8 +302,8 @@ namespace Compiler.Services
                 MatchAndSetToken(TokenType.CloseCurlyBrace);
 
                 Console.WriteLine("Exiting method declaration");
-                Console.WriteLine(ExpressionExpander);
-                ExpressionExpander.Reset();
+                ExpressionExpander.DumpIntermediateCode(Console.Out);
+                ExpressionExpander.Clear();
 
                 // Exit current scope
                 PerformScopeExitAction();
@@ -379,7 +380,7 @@ namespace Compiler.Services
             Statement();
             MatchAndSetToken(TokenType.Semicolon);
 
-            Console.WriteLine(ExpressionExpander);
+            ExpressionExpander.DumpIntermediateCode(Console.Out);
             ExpressionExpander.Clear();
 
             StatementTail();
@@ -403,7 +404,7 @@ namespace Compiler.Services
             Statement();
             MatchAndSetToken(TokenType.Semicolon);
 
-            Console.WriteLine(ExpressionExpander);
+            ExpressionExpander.DumpIntermediateCode(Console.Out);
             ExpressionExpander.Clear();
 
             StatementTail();
@@ -418,10 +419,12 @@ namespace Compiler.Services
 
             if (CurrentToken.Type == TokenType.Identifier)
             {
+                ExpressionExpander.Mode = ExpressionExpanderService.ASSIGNMENT;
                 AssignmentStatement();
             }
             else
             {
+                ExpressionExpander.Mode = ExpressionExpanderService.METHODC_ALL;
                 IOStatement();
             }
             PopProduction();
@@ -430,7 +433,6 @@ namespace Compiler.Services
         private void AssignmentStatement()
         {
             // AssignmentStatement -> idt = Expression
-
             PushProduction("AssignmentStatement");
             var identifier = CurrentToken.Lexeme;
 
@@ -925,9 +927,9 @@ namespace Compiler.Services
 
         private void PerformScopeExitAction()
         {
-            Console.WriteLine();
-            Console.WriteLine($"Dumping entries at depth [{Depth}]\n");
-            SymbolTable.WriteTable(Depth);
+            // Console.WriteLine();
+            // Console.WriteLine($"Dumping entries at depth [{Depth}]\n");
+            // SymbolTable.WriteTable(Depth);
             SymbolTable.DeleteDepth(Depth);
             Depth--;
         }
