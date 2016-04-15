@@ -140,7 +140,7 @@ namespace Compiler.Services.Tests
 
         [TestMethod()]
         [TestCategory("Syntax Tree Parser")]
-        [ExpectedException(typeof(UndeclaredVariableException))]
+        [ExpectedException(typeof(UndeclaredIdentifierException))]
         public void TestclassWithExpressionUndeclared1()
         {
             try
@@ -156,7 +156,7 @@ namespace Compiler.Services.Tests
 
         [TestMethod()]
         [TestCategory("Syntax Tree Parser")]
-        [ExpectedException(typeof(UndeclaredVariableException))]
+        [ExpectedException(typeof(UndeclaredIdentifierException))]
         public void TestclassWithExpressionUndeclared2()
         {
             try

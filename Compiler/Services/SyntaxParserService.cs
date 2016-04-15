@@ -439,7 +439,7 @@ namespace Compiler.Services
 
         private void AssignmentStatement()
         {
-            // AssignmentStatement -> idt = Expression
+            // AssignmentStatement -> idt = Expression | idt = MethodCall | MethodCall
             PushProduction("AssignmentStatement");
             var identifier = CurrentToken.Lexeme;
 
@@ -448,12 +448,87 @@ namespace Compiler.Services
 
             if (SymbolTable.Lookup(identifier) == null)
             {
-                throw new UndeclaredVariableException(identifier);
+                throw new UndeclaredIdentifierException(identifier);
             }
 
             ExpressionExpander.Push(CurrentToken);
             MatchAndSetToken(TokenType.Assignment);
             Expression();
+            PopProduction();
+        }
+
+        private void MethodCall()
+        {
+            // MethodCall		->	ClassName.idt ( Parameters )
+            PushProduction("MethodCall");
+
+            ClassName();
+            MatchAndSetToken(TokenType.Dot);
+            MatchAndSetToken(TokenType.Identifier);
+            MatchAndSetToken(TokenType.OpenParen);
+            Parameters();
+            MatchAndSetToken(TokenType.CloseParen);
+
+            PopProduction();
+        }
+
+        private void ClassName()
+        {
+            // ClassName		->	idt
+            PushProduction("ClassName");
+
+            var identifier = CurrentToken.Lexeme;
+            MatchAndSetToken(TokenType.Identifier);
+
+            if (SymbolTable.Lookup(identifier) == null)
+            {
+                throw new UndeclaredIdentifierException(identifier);
+            }
+
+            PopProduction();
+        }
+
+        private void Parameters()
+        {
+            // Parameters		->	idt ParameterTail | num ParameterTail| ε
+            PushProduction("Parameters");
+            
+            try
+            {
+                SetTokenIfAnyMatch(
+                        TokenType.Identifier,
+                        TokenType.LiteralInteger,
+                        TokenType.LiteralReal);
+            }
+            catch (MissingOptionalTokenException)
+            {
+                // ε production
+                PopProduction();
+                return;
+            }
+
+            ParameterTail();
+            PopProduction();
+        }
+
+        private void ParameterTail()
+        {
+            // ParameterTail	->	, idt ParameterTail | , num ParameterTail | ε
+            PushProduction("ParameterTail");
+
+            if (CurrentToken.Type != TokenType.Comma)
+            {
+                PopProduction();
+                return;
+            }
+
+            MatchAndSetToken(TokenType.Comma);
+            SetTokenIfAnyMatch(
+                TokenType.Identifier,
+                TokenType.LiteralInteger,
+                TokenType.LiteralReal);
+            ParameterTail();
+
             PopProduction();
         }
 
@@ -548,7 +623,7 @@ namespace Compiler.Services
 
                 if (SymbolTable.Lookup(identifier) == null)
                 {
-                    throw new UndeclaredVariableException(identifier);
+                    throw new UndeclaredIdentifierException(identifier);
                 }
             }
             else if (currentTokenType == TokenType.LiteralInteger)
@@ -630,7 +705,7 @@ namespace Compiler.Services
 
                 if (entry == null)
                 {
-                    throw new UndeclaredVariableException(identifier);
+                    throw new UndeclaredIdentifierException(identifier);
                 }
 
                 if (((VariableEntry)entry.Content).DataType != VariableType.Boolean)
