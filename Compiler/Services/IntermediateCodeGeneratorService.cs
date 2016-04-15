@@ -1,7 +1,6 @@
 ﻿using Compiler.Models;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -22,10 +21,13 @@ namespace Compiler.Services
         public const int ASSIGNMENT = 1;
         public const int ASSIGNMENT_VIA_METHOD_CALL = 2;
 
-        private List<Token> Tokens = new List<Token>();
-        private Stack<Token> PostfixStack = new Stack<Token>();
-        private Stack<Token> Operators = new Stack<Token>();
+        private List<Token> _Tokens = new List<Token>();
+        private Stack<Token> _PostfixStack = new Stack<Token>();
+        private Stack<Token> _Operators = new Stack<Token>();
+        private Dictionary<string, string> _VariableLocations = new Dictionary<string, string>();
+
         private int VariableNameCount;
+
 
         private static string PREFIX = "_";
         private static string GENERATED_NAME_PREFIX = $"{PREFIX}t";
@@ -35,19 +37,20 @@ namespace Compiler.Services
 
         public void Push(Token token)
         {
-            Tokens.Add(token);
+            _Tokens.Add(token);
         }
 
         public void Pop()
         {
-            Tokens.RemoveAt(Tokens.Count - 1);
+            _Tokens.RemoveAt(_Tokens.Count - 1);
         }
 
         public void Clear()
         {
-            Tokens.Clear();
-            PostfixStack.Clear();
-            Operators.Clear();
+            _Tokens.Clear();
+            _PostfixStack.Clear();
+            _Operators.Clear();
+            _VariableLocations.Clear();
             Mode = INVALID_MODE;
         }
 
@@ -57,28 +60,30 @@ namespace Compiler.Services
             VariableNameCount = 0;
         }
 
-        public void GenerateIntermediateCode(Action<object> printer, Dictionary<string, string> variableLocations, int BPOffset)
+        public void GenerateIntermediateCode(Action<object> printer, Dictionary<string, string> variableLocations, int bpOffset)
         {
-            printer(Evaluate());
+            printer(Evaluate(variableLocations, bpOffset));
+            // Uncomment to print postfix expresion
+            // printer($"\n\n{this.ToString()}\n\n");
         }
 
-        private string Evaluate()
+        private string Evaluate(Dictionary<string, string> variableLocations, int bpOffset)
         {
             if (Mode == RETURN_EXPRESSION)
             {
-                ShuntYardToPostFix(Tokens);
+                ShuntYardToPostFix(_Tokens);
                 var res = ParsePostfixStack();
 
                 res.Last()[NAME] = RETURN_REGISTER;
-                return StringifyExpressionList(SimplifyExpressionList(res));
+                return StringifyExpressionList(SimplifyExpressionList(res), variableLocations);
             }
             else if (Mode == ASSIGNMENT_VIA_METHOD_CALL)
             {
-                var variableToken = Tokens[0];
-                var assignmentToken = Tokens[1];
-                var classToken = Tokens[2];
-                var methodToken = Tokens[3];
-                var parameters = Tokens.Skip(4).Reverse();
+                var variableToken = _Tokens[0];
+                var assignmentToken = _Tokens[1];
+                var classToken = _Tokens[2];
+                var methodToken = _Tokens[3];
+                var parameters = _Tokens.Skip(4).Reverse();
                 var str = new StringBuilder();
 
                 foreach (var parameter in parameters)
@@ -90,14 +95,13 @@ namespace Compiler.Services
                 str.Append($"{variableToken.Lexeme} = _AX");
 
                 return str.ToString();
-
             }
             else if (Mode == ASSIGNMENT)
             {
-                var variableToken = Tokens[0];
-                var assignmentToken = Tokens[1];
+                var variableToken = _Tokens[0];
+                var assignmentToken = _Tokens[1];
 
-                ShuntYardToPostFix(Tokens.Skip(2));
+                ShuntYardToPostFix(_Tokens.Skip(2));
 
                 var result = SimplifyExpressionList(ParsePostfixStack());
                 var entry = CreateEntry(
@@ -105,7 +109,7 @@ namespace Compiler.Services
                     operand1: result.Last()[NAME]);
 
                 result.Add(entry);
-                return StringifyExpressionList(result);
+                return StringifyExpressionList(result, variableLocations);
             }
             else
             {
@@ -120,81 +124,87 @@ namespace Compiler.Services
                 // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
                 if (IsNumberOrVariable(token))
                 {
-                    PostfixStack.Push(token);
+                    _PostfixStack.Push(token);
                 }
                 else if (token == Token.UNARY_MINUS)
                 {
                     // Unary minus (Negation)
-                    if (Operators.Any() && Operators.Peek() == Token.UNARY_MINUS)
+                    if (_Operators.Any() && _Operators.Peek() == Token.UNARY_MINUS)
                     {
                         // -- => cancels out
-                        Operators.Pop();
+                        _Operators.Pop();
                     }
                     else
                     {
-                        Operators.Push(token);
+                        _Operators.Push(token);
                     }
                 }
                 else if (token.Type == TokenType.BooleanNot)
                 {
-                    if (Operators.Any() && Operators.Peek().Type == TokenType.BooleanNot)
+                    if (_Operators.Any() && _Operators.Peek().Type == TokenType.BooleanNot)
                     {
                         // !! => cancels out
-                        Operators.Pop();
+                        _Operators.Pop();
                     }
                     else
                     {
-                        Operators.Push(token);
+                        _Operators.Push(token);
                     }
                 }
                 else if (token.Type == TokenType.True || token.Type == TokenType.False)
                 {
-                    PostfixStack.Push(token);
+                    _PostfixStack.Push(token);
                 }
                 else if (token.Type == TokenType.OpenParen)
                 {
-                    Operators.Push(token);
+                    _Operators.Push(token);
                 }
                 else if (token.Type == TokenType.CloseParen)
                 {
-                    while (Operators.Any() && Operators.Peek().Type != TokenType.OpenParen)
+                    while (_Operators.Any() && _Operators.Peek().Type != TokenType.OpenParen)
                     {
-                        PostfixStack.Push(Operators.Pop());
+                        _PostfixStack.Push(_Operators.Pop());
                     }
 
-                    Operators.Pop();
+                    _Operators.Pop();
                 }
                 else if (IsArithmeticOperator(token.Type))
                 {
-                    if (!Operators.Any())
+                    if (!_Operators.Any())
                     {
-                        Operators.Push(token);
+                        _Operators.Push(token);
                     }
                     else
                     {
+                        if (_Operators.Any() && _Operators.Peek() == Token.UNARY_MINUS)
+                        {
+                            // Push unary minus onto postfix stack
+                            _PostfixStack.Push(_Operators.Pop());
+                        }
+
                         // TODO: Add support for ++, --
 
                         // - + has lesser precedence than * /
-                        while (Operators.Any() && IsMultDiv(Operators.Peek().Type) && IsAddSub(token.Type))
+                        while (_Operators.Any() && IsMultDiv(_Operators.Peek().Type) && IsAddSub(token.Type))
                         {
-                            PostfixStack.Push(Operators.Pop());
+                            _PostfixStack.Push(_Operators.Pop());
                         }
 
-                        Operators.Push(token);
+                        _Operators.Push(token);
                     }
                 }
             }
 
             // Add remaining operators onto output queue
-            while (Operators.Any())
+            while (_Operators.Any())
             {
-                PostfixStack.Push(Operators.Pop());
+                _PostfixStack.Push(_Operators.Pop());
             }
         }
 
         private IList<object[]> ParsePostfixStack()
         {
-            var reverseStack = this.PostfixStack.Reverse();
+            var reverseStack = this._PostfixStack.Reverse();
             var expressionStack = new Stack<object[]>();
             var expressionList = new List<object[]>();
 
@@ -250,7 +260,9 @@ namespace Compiler.Services
 
         private string GenerateVariableName()
         {
-            return $"{GENERATED_NAME_PREFIX}{++VariableNameCount}";
+            var name = $"{GENERATED_NAME_PREFIX}{++VariableNameCount}";
+
+            return name;
         }
 
         private static object[] CreateEntry(
@@ -273,49 +285,28 @@ namespace Compiler.Services
             return entry;
         }
 
-        private static string StringifyExpressionList(IList<object[]> expressionList)
+        private static string StringifyExpressionList(IList<object[]> expressionList, Dictionary<string, string> variableLocations)
         {
             var res = new StringBuilder();
 
             foreach (var item in expressionList)
             {
-                var str = $"{item[NAME]} = ";
-                var operandStr = "";
-
-                if (item[OPERAND1] is Token)
-                {
-                    operandStr = $"{((Token)item[OPERAND1]).Lexeme}";
-                }
-                else
-                {
-                    operandStr = $"{item[OPERAND1]}";
-                }
+                var str = $"{ExtractString(item[NAME], variableLocations)} = ";
+                var operandStr = $"{ExtractString(item[OPERAND1], variableLocations)}";
 
                 // Add visual indicator for negation
                 if (item[NEGATE_OPERAND1] != null && (bool)item[NEGATE_OPERAND1])
                 {
                     operandStr = $"{"[" + operandStr + "]",15 }";
                 }
-                else
-                {
-                    operandStr = $"{operandStr,15 }";
-                }
 
-                str = $"{str}{operandStr}";
+                str = $"{str}{operandStr, 15}";
 
                 if (item[OPERATOR] != null)
                 {
                     str = $"{str}  {((Token)item[OPERATOR]).Lexeme}  ";
 
-                    if (item[OPERAND2] is string)
-                    {
-                        operandStr = $"{item[OPERAND2]}";
-                    }
-                    else
-                    {
-                        operandStr = $"{((Token)item[OPERAND2]).Lexeme}";
-                    }
-
+                    operandStr = $"{ExtractString(item[OPERAND2], variableLocations)}";
                     // Add visual indicator for negation
                     if (item[NEGATE_OPERAND2] != null && (bool)item[NEGATE_OPERAND2])
                     {
@@ -329,6 +320,34 @@ namespace Compiler.Services
             }
 
             return res.ToString().TrimEnd();
+        }
+
+        private static string ExtractString(object obj, Dictionary<string, string> variableLocations)
+        {
+            var str = string.Empty;
+
+            // If token, then it's either a number or an identifier
+            if (obj is Token)
+            {
+                var token = (Token)obj;
+
+                if (token.Type == TokenType.Identifier)
+                {
+                    str = $"{variableLocations[token.Lexeme]}";
+                }
+                else
+                {
+                    str = $"{token.Lexeme}";
+                }
+            }
+            else if (obj is string)
+            {
+                var val = obj.ToString();
+                var key = variableLocations.ContainsKey(val) ? variableLocations[val] : val;
+                str = $"{key}";
+            }
+
+            return str;
         }
 
         private static IList<object[]> SimplifyExpressionList(IList<object[]> expressionList)
@@ -380,14 +399,14 @@ namespace Compiler.Services
 
         public override string ToString()
         {
-            if (!PostfixStack.Any())
+            if (!_PostfixStack.Any())
             {
                 return string.Empty;
             }
 
             var tab = "    ";
-            var lineNumber = PostfixStack.First(t => t.LineNumber != Token.UNARY_MINUS.LineNumber).LineNumber;
-            return $"{tab} # {lineNumber} =>   {string.Join($" ", PostfixStack.Reverse().Select(tok => tok.Lexeme))}\n";
+            var lineNumber = _PostfixStack.First(t => t.LineNumber != Token.UNARY_MINUS.LineNumber).LineNumber;
+            return $"{tab} # {lineNumber} =>   {string.Join($" ", _PostfixStack.Reverse().Select(tok => tok.Lexeme))}\n";
             // return "\n\n" + tab + string.Join($"\n{tab}", OutputStack.Reverse());
         }
     }
