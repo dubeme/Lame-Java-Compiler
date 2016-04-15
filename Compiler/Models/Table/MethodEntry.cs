@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Compiler.Models.Table
@@ -30,7 +31,7 @@ namespace Compiler.Models.Table
         /// <summary>
         /// Gets or sets the parameters of this Method.
         /// </summary>
-        public LinkedListNode<VariableType> ParameterTypes { get; set; }
+        public LinkedListNode<KeyValuePair<string, VariableType>> Parameters { get; set; }
 
         /// <summary>
         /// Prints the content using the specified printer.
@@ -44,9 +45,9 @@ namespace Compiler.Models.Table
 
             str.Append($"{this.ReturnType} {lexeme}");
 
-            if (this.ParameterTypes != null)
+            if (this.Parameters != null)
             {
-                var paramsTypes = this.ParameterTypes;
+                var paramsTypes = this.Parameters;
 
                 str.Append($"(");
                 while (paramsTypes != null)
