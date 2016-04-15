@@ -54,9 +54,9 @@ namespace Compiler.Services
             VariableNameCount = 0;
         }
 
-        public void DumpIntermediateCode(TextWriter t)
+        public void DumpIntermediateCode(Action<object> printer)
         {
-            t.WriteLine(Evaluate());
+            printer(Evaluate());
         }
 
         private string Evaluate()
@@ -254,7 +254,6 @@ namespace Compiler.Services
         private static string StringifyExpressionList(IList<object[]> expressionList)
         {
             var res = new StringBuilder();
-            res.AppendLine();
 
             foreach (var item in expressionList)
             {
@@ -306,9 +305,8 @@ namespace Compiler.Services
 
                 res.AppendLine(str);
             }
-            res.AppendLine();
 
-            return res.ToString();
+            return res.ToString().TrimEnd();
         }
 
         private static IList<object[]> SimplifyExpressionList(IList<object[]> expressionList)

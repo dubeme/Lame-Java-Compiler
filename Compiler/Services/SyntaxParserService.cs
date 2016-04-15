@@ -269,6 +269,12 @@ namespace Compiler.Services
                 // Insert method in symbol table
                 InsertMethod(returnType, identifier);
 
+                // Print intermediate code for procedure
+                IntermediateCodePrinter($"proc {identifier.Lexeme}");
+
+                // Reset expression expander
+                ExpressionExpander.Reset();
+
                 // update depth
                 Depth++;
 
@@ -296,14 +302,15 @@ namespace Compiler.Services
                     ExpressionExpander.Mode = ExpressionExpanderService.JUST_AN_EXPRESSION;
                     MatchAndSetToken(TokenType.Return);
                     Expression();
+
+                    ExpressionExpander.DumpIntermediateCode(IntermediateCodePrinter);
+                    ExpressionExpander.Clear();
                 }
 
                 MatchAndSetToken(TokenType.Semicolon);
                 MatchAndSetToken(TokenType.CloseCurlyBrace);
 
-                Console.WriteLine("Exiting method declaration");
-                ExpressionExpander.DumpIntermediateCode(Console.Out);
-                ExpressionExpander.Clear();
+                IntermediateCodePrinter($"endp {identifier.Lexeme}\n");
 
                 // Exit current scope
                 PerformScopeExitAction();
@@ -380,7 +387,7 @@ namespace Compiler.Services
             Statement();
             MatchAndSetToken(TokenType.Semicolon);
 
-            ExpressionExpander.DumpIntermediateCode(Console.Out);
+            ExpressionExpander.DumpIntermediateCode(IntermediateCodePrinter);
             ExpressionExpander.Clear();
 
             StatementTail();
@@ -404,7 +411,7 @@ namespace Compiler.Services
             Statement();
             MatchAndSetToken(TokenType.Semicolon);
 
-            ExpressionExpander.DumpIntermediateCode(Console.Out);
+            ExpressionExpander.DumpIntermediateCode(IntermediateCodePrinter);
             ExpressionExpander.Clear();
 
             StatementTail();
@@ -932,6 +939,17 @@ namespace Compiler.Services
             // SymbolTable.WriteTable(Depth);
             SymbolTable.DeleteDepth(Depth);
             Depth--;
+        }
+
+        private void IntermediateCodePrinter(object str)
+        {
+            if (str == null)
+            {
+                return;
+            }
+
+            var _str = str.ToString();
+            Console.WriteLine(str);
         }
     }
 }
