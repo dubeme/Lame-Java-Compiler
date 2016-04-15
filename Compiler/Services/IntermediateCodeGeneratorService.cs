@@ -57,7 +57,7 @@ namespace Compiler.Services
             VariableNameCount = 0;
         }
 
-        public void DumpIntermediateCode(Action<object> printer)
+        public void GenerateIntermediateCode(Action<object> printer, Dictionary<string, string> variableLocations, int BPOffset)
         {
             printer(Evaluate());
         }

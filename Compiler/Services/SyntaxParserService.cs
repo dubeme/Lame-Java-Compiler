@@ -52,6 +52,10 @@ namespace Compiler.Services
         private TokenType CurrentDataType;
         private VariableScope CurrentVariableScope;
         private Stack<string> ProductionStack = new Stack<string>();
+        private Dictionary<string, string> VariableLocation = new Dictionary<string, string>();
+        private int BPOffset = 0;
+        private const int RETURN_ADDRESS_OLD_BP_OFFSET = 2 + 2;
+        private const string BP = "_BP";
 
         public SyntaxParserService(LexicalAnalyzerService lexAnalyzer, SymbolTable symbolTable)
         {
@@ -186,6 +190,9 @@ namespace Compiler.Services
                 }
 
                 InsertVariable(dataType, identifier, true, value);
+
+                BPOffset += GetDataTypeSize(GetDataType(dataType));
+                VariableLocation.Add(identifier.Lexeme, $"{BP}-{BPOffset}");
             }
             else
             {
@@ -220,6 +227,9 @@ namespace Compiler.Services
 
             MatchAndSetToken(TokenType.Identifier);
             InsertVariable(CurrentDataType, identifier);
+
+            BPOffset += GetDataTypeSize(GetDataType(CurrentDataType));
+            VariableLocation.Add(identifier.Lexeme, $"{BP}-{BPOffset}");
 
             if (CurrentToken.Type == TokenType.Comma)
             {
@@ -290,6 +300,8 @@ namespace Compiler.Services
                 Offset = 0;
                 CurrentVariableScope = VariableScope.MethodBody;
 
+                SetupParameterStackLocation();
+
                 VariableDeclaration();
                 SequenceofStatements();
 
@@ -303,8 +315,7 @@ namespace Compiler.Services
                     MatchAndSetToken(TokenType.Return);
                     Expression();
 
-                    ExpressionExpander.DumpIntermediateCode(IntermediateCodePrinter);
-                    ExpressionExpander.Clear();
+                    DumpIntermediateCode();
                 }
 
                 MatchAndSetToken(TokenType.Semicolon);
@@ -314,6 +325,9 @@ namespace Compiler.Services
 
                 // Exit current scope
                 PerformScopeExitAction();
+
+                VariableLocation.Clear();
+                BPOffset = 0;
 
                 MethodDeclaration();
             }
@@ -387,8 +401,7 @@ namespace Compiler.Services
             Statement();
             MatchAndSetToken(TokenType.Semicolon);
 
-            ExpressionExpander.DumpIntermediateCode(IntermediateCodePrinter);
-            ExpressionExpander.Clear();
+            DumpIntermediateCode();
 
             StatementTail();
             PopProduction();
@@ -411,8 +424,7 @@ namespace Compiler.Services
             Statement();
             MatchAndSetToken(TokenType.Semicolon);
 
-            ExpressionExpander.DumpIntermediateCode(IntermediateCodePrinter);
-            ExpressionExpander.Clear();
+            DumpIntermediateCode();
 
             StatementTail();
             PopProduction();
@@ -955,9 +967,12 @@ namespace Compiler.Services
 
             if (_scope == VariableScope.MethodParameter)
             {
-                var paramType = new Models.Table.LinkedListNode<VariableType> { Value = _dataType };
-                paramType.Next = CurrentMethod.ParameterTypes;
-                CurrentMethod.ParameterTypes = paramType;
+                var paramType = new Models.Table.LinkedListNode<KeyValuePair<string, VariableType>>
+                {
+                    Value = new KeyValuePair<string, VariableType>(identifier.Lexeme, _dataType)
+                };
+                paramType.Next = CurrentMethod.Parameters;
+                CurrentMethod.Parameters = paramType;
 
                 CurrentMethod.NumberOfParameters++;
             }
@@ -1013,7 +1028,7 @@ namespace Compiler.Services
             CurrentMethod = new MethodEntry
             {
                 NumberOfParameters = 0,
-                ParameterTypes = null,
+                Parameters = null,
                 ReturnType = _returnType,
                 SizeOfLocal = 0
             };
@@ -1081,6 +1096,36 @@ namespace Compiler.Services
             // SymbolTable.WriteTable(Depth);
             SymbolTable.DeleteDepth(Depth);
             Depth--;
+        }
+
+        private void SetupParameterStackLocation()
+        {
+            var parameterList = CurrentMethod.Parameters;
+            var sum = RETURN_ADDRESS_OLD_BP_OFFSET;
+
+            // Loop1: Sum up total
+            while (parameterList != null)
+            {
+                sum += GetDataTypeSize(parameterList.Value.Value);
+                VariableLocation.Add(parameterList.Value.Key, "");
+                parameterList = parameterList.Next;
+            }
+
+            parameterList = CurrentMethod.Parameters;
+
+            // Loop2: Setup offsets
+            while (parameterList != null)
+            {
+                sum -= GetDataTypeSize(parameterList.Value.Value);
+                VariableLocation[parameterList.Value.Key]  = $"{BP}+{sum}";
+                parameterList = parameterList.Next;
+            }
+        }
+
+        private void DumpIntermediateCode()
+        {
+            ExpressionExpander.GenerateIntermediateCode(IntermediateCodePrinter, VariableLocation, BPOffset);
+            ExpressionExpander.Clear();
         }
 
         private void IntermediateCodePrinter(object str)
