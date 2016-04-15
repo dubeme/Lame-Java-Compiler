@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Compiler.Services
 {
-    public class ExpressionExpanderService
+    public class IntermediateCodeGeneratorService
     {
         private const int NAME = 0;
         private const int OPERAND1 = 1;
@@ -279,7 +279,7 @@ namespace Compiler.Services
 
             foreach (var item in expressionList)
             {
-                var str = $"{item[NAME],16} = ";
+                var str = $"{item[NAME]} = ";
                 var operandStr = "";
 
                 if (item[OPERAND1] is Token)

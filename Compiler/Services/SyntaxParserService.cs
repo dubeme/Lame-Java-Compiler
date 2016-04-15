@@ -15,7 +15,7 @@ namespace Compiler.Services
 
         private Token _CurrentToken;
 
-        private ExpressionExpanderService ExpressionExpander = new ExpressionExpanderService();
+        private IntermediateCodeGeneratorService ExpressionExpander = new IntermediateCodeGeneratorService();
 
         private Token CurrentToken
         {
@@ -270,7 +270,7 @@ namespace Compiler.Services
                 InsertMethod(returnType, identifier);
 
                 // Print intermediate code for procedure
-                IntermediateCodePrinter($"proc {identifier.Lexeme}");
+                IntermediateCodePrinter($"proc {identifier.Lexeme}", false);
 
                 // Reset expression expander
                 ExpressionExpander.Reset();
@@ -299,7 +299,7 @@ namespace Compiler.Services
                 }
                 else
                 {
-                    ExpressionExpander.Mode = ExpressionExpanderService.RETURN_EXPRESSION;
+                    ExpressionExpander.Mode = IntermediateCodeGeneratorService.RETURN_EXPRESSION;
                     MatchAndSetToken(TokenType.Return);
                     Expression();
 
@@ -310,7 +310,7 @@ namespace Compiler.Services
                 MatchAndSetToken(TokenType.Semicolon);
                 MatchAndSetToken(TokenType.CloseCurlyBrace);
 
-                IntermediateCodePrinter($"endp {identifier.Lexeme}\n");
+                IntermediateCodePrinter($"endp {identifier.Lexeme}\n", false);
 
                 // Exit current scope
                 PerformScopeExitAction();
@@ -426,12 +426,12 @@ namespace Compiler.Services
 
             if (CurrentToken.Type == TokenType.Identifier)
             {
-                ExpressionExpander.Mode = ExpressionExpanderService.ASSIGNMENT;
+                ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT;
                 AssignmentStatement();
             }
             else
             {
-                ExpressionExpander.Mode = ExpressionExpanderService.ASSIGNMENT_VIA_METHOD_CALL;
+                ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT_VIA_METHOD_CALL;
                 IOStatement();
             }
             PopProduction();
@@ -467,14 +467,14 @@ namespace Compiler.Services
                 {
                     case EntryType.Variable:
                         // An assignment with method expression
-                        ExpressionExpander.Mode = ExpressionExpanderService.ASSIGNMENT;
+                        ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT;
                         Expression();
                         break;
 
                     case EntryType.Class:
                         // Assignment with method call
                         // Since methods are called as if they're static
-                        ExpressionExpander.Mode = ExpressionExpanderService.ASSIGNMENT_VIA_METHOD_CALL;
+                        ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT_VIA_METHOD_CALL;
                         MethodCall();
                         break;
 
@@ -485,7 +485,7 @@ namespace Compiler.Services
             else
             {
                 // An assignment with expression
-                ExpressionExpander.Mode = ExpressionExpanderService.ASSIGNMENT;
+                ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT;
                 Expression();
             }
 
@@ -1085,13 +1085,25 @@ namespace Compiler.Services
 
         private void IntermediateCodePrinter(object str)
         {
+            IntermediateCodePrinter(str, true);
+        }
+
+        private void IntermediateCodePrinter(object str, bool useTab)
+        {
             if (str == null)
             {
                 return;
             }
 
-            var _str = str.ToString();
-            Console.WriteLine(str);
+            if (useTab)
+            {
+                var tab = "    ";
+                Console.WriteLine(tab + str.ToString().Replace("\n", $"\n{tab}"));
+            }
+            else
+            {
+                Console.WriteLine(str.ToString());
+            }
         }
     }
 }
