@@ -299,7 +299,7 @@ namespace Compiler.Services
                 }
                 else
                 {
-                    ExpressionExpander.Mode = ExpressionExpanderService.JUST_AN_EXPRESSION;
+                    ExpressionExpander.Mode = ExpressionExpanderService.RETURN_EXPRESSION;
                     MatchAndSetToken(TokenType.Return);
                     Expression();
 

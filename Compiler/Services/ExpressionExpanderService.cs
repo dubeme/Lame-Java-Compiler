@@ -18,7 +18,7 @@ namespace Compiler.Services
         private const int SIZE = 6;
 
         private const int INVALID_MODE = -1;
-        public const int JUST_AN_EXPRESSION = 0;
+        public const int RETURN_EXPRESSION = 0;
         public const int ASSIGNMENT = 1;
         public const int METHODC_ALL = 2;
 
@@ -26,7 +26,10 @@ namespace Compiler.Services
         private Stack<Token> PostfixStack = new Stack<Token>();
         private Stack<Token> Operators = new Stack<Token>();
         private int VariableNameCount;
-        private static string GENERATED_NAME_PREFIX = "__t";
+
+        private static string PREFIX = "_";
+        private static string GENERATED_NAME_PREFIX = $"{PREFIX}t";
+        private static string RETURN_REGISTER = $"{PREFIX}AX";
 
         public int Mode { get; set; }
 
@@ -61,10 +64,13 @@ namespace Compiler.Services
 
         private string Evaluate()
         {
-            if (Mode == ExpressionExpanderService.JUST_AN_EXPRESSION)
+            if (Mode == ExpressionExpanderService.RETURN_EXPRESSION)
             {
                 ShuntYardToPostFix(Tokens);
-                return StringifyExpressionList(ParsePostfixStack());
+                var res = ParsePostfixStack();
+
+                res.Last()[NAME] = RETURN_REGISTER;
+                return StringifyExpressionList(SimplifyExpressionList(res));
             }
             else if (Mode == ExpressionExpanderService.METHODC_ALL)
             {
@@ -257,7 +263,7 @@ namespace Compiler.Services
 
             foreach (var item in expressionList)
             {
-                var str = $"{item[NAME],10} = ";
+                var str = $"{item[NAME],16} = ";
                 var operandStr = "";
 
                 if (item[OPERAND1] is Token)
@@ -315,7 +321,7 @@ namespace Compiler.Services
             {
                 if (exp != null)
                 {
-                    if (exp[NAME].ToString().StartsWith(GENERATED_NAME_PREFIX))
+                    if (exp[NAME].ToString().StartsWith(PREFIX))
                     {
                         return true;
                     }
