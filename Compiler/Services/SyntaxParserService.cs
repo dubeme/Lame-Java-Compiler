@@ -901,8 +901,13 @@ namespace Compiler.Services
             MatchAndSetToken(TokenType.CloseParen);
             MatchAndSetToken(TokenType.OpenCurlyBrace);
 
+            // Print intermediate code for procedure
+            IntermediateCodePrinter($"proc {identifier.Lexeme}", false);
+
             Depth++;
             SequenceofStatements();
+
+            IntermediateCodePrinter($"endp {identifier.Lexeme}\n", false);
 
             MatchAndSetToken(TokenType.CloseCurlyBrace);
 
