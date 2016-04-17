@@ -26,12 +26,16 @@ namespace Compiler.Services
         private Stack<Token> _Operators = new Stack<Token>();
         private Dictionary<string, string> _VariableLocations = new Dictionary<string, string>();
 
-        private int VariableNameCount;
+
+        private int _TotalTempVariableSize = 0;
+        private int _VariableNameCount = 0;
+        private int _BPOffset = 0;
 
 
         private static string PREFIX = "_";
         private static string GENERATED_NAME_PREFIX = $"{PREFIX}t";
         private static string RETURN_REGISTER = $"{PREFIX}AX";
+        private static string BP_REGISTER = $"{PREFIX}BP";
 
         public int Mode { get; set; }
 
@@ -57,17 +61,19 @@ namespace Compiler.Services
         public void Reset()
         {
             Clear();
-            VariableNameCount = 0;
+            _VariableNameCount = 0;
+            _TotalTempVariableSize = 0;
         }
 
         public void GenerateIntermediateCode(Action<object> printer, Dictionary<string, string> variableLocations, int bpOffset)
         {
-            printer(Evaluate(variableLocations, bpOffset));
+            _BPOffset = bpOffset;
+            printer(Evaluate(variableLocations));
             // Uncomment to print postfix expresion
             // printer($"\n\n{this.ToString()}\n\n");
         }
 
-        private string Evaluate(Dictionary<string, string> variableLocations, int bpOffset)
+        private string Evaluate(Dictionary<string, string> variableLocations)
         {
             if (Mode == RETURN_EXPRESSION)
             {
@@ -75,6 +81,12 @@ namespace Compiler.Services
                 var res = ParsePostfixStack();
 
                 res.Last()[NAME] = RETURN_REGISTER;
+
+                foreach (var item in _VariableLocations)
+                {
+                    variableLocations.Add(item.Key, item.Value);
+                }
+
                 return StringifyExpressionList(SimplifyExpressionList(res), variableLocations);
             }
             else if (Mode == ASSIGNMENT_VIA_METHOD_CALL)
@@ -109,6 +121,12 @@ namespace Compiler.Services
                     operand1: result.Last()[NAME]);
 
                 result.Add(entry);
+
+                foreach (var item in _VariableLocations)
+                {
+                    variableLocations.Add(item.Key, item.Value);
+                }
+
                 return StringifyExpressionList(result, variableLocations);
             }
             else
@@ -260,7 +278,11 @@ namespace Compiler.Services
 
         private string GenerateVariableName()
         {
-            var name = $"{GENERATED_NAME_PREFIX}{++VariableNameCount}";
+            var name = $"{GENERATED_NAME_PREFIX}{++_VariableNameCount}";
+
+            // Assume only 2 byte data size
+            _TotalTempVariableSize += 2;
+            _VariableLocations.Add(name, $"{BP_REGISTER}-{_BPOffset + _TotalTempVariableSize}");
 
             return name;
         }
@@ -291,8 +313,8 @@ namespace Compiler.Services
 
             foreach (var item in expressionList)
             {
-                var str = $"{ExtractString(item[NAME], variableLocations)} = ";
-                var operandStr = $"{ExtractString(item[OPERAND1], variableLocations)}";
+                var str = $"{GetStackBasedLocation(item[NAME], variableLocations)} = ";
+                var operandStr = $"{GetStackBasedLocation(item[OPERAND1], variableLocations)}";
 
                 // Add visual indicator for negation
                 if (item[NEGATE_OPERAND1] != null && (bool)item[NEGATE_OPERAND1])
@@ -306,7 +328,7 @@ namespace Compiler.Services
                 {
                     str = $"{str}  {((Token)item[OPERATOR]).Lexeme}  ";
 
-                    operandStr = $"{ExtractString(item[OPERAND2], variableLocations)}";
+                    operandStr = $"{GetStackBasedLocation(item[OPERAND2], variableLocations)}";
                     // Add visual indicator for negation
                     if (item[NEGATE_OPERAND2] != null && (bool)item[NEGATE_OPERAND2])
                     {
@@ -322,7 +344,7 @@ namespace Compiler.Services
             return res.ToString().TrimEnd();
         }
 
-        private static string ExtractString(object obj, Dictionary<string, string> variableLocations)
+        private static string GetStackBasedLocation(object obj, Dictionary<string, string> variableLocations)
         {
             var str = string.Empty;
 

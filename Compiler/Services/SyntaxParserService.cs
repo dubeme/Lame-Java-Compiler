@@ -191,8 +191,13 @@ namespace Compiler.Services
 
                 InsertVariable(dataType, identifier, true, value);
 
-                BPOffset += GetDataTypeSize(GetDataType(dataType));
-                VariableLocation.Add(identifier.Lexeme, $"{BP}-{BPOffset}");
+                if (CurrentVariableScope == VariableScope.MethodBody)
+                {
+                    // Not handling class body
+
+                    BPOffset += GetDataTypeSize(GetDataType(dataType));
+                    VariableLocation.Add(identifier.Lexeme, $"{BP}-{BPOffset}");
+                }
             }
             else
             {
@@ -228,8 +233,13 @@ namespace Compiler.Services
             MatchAndSetToken(TokenType.Identifier);
             InsertVariable(CurrentDataType, identifier);
 
-            BPOffset += GetDataTypeSize(GetDataType(CurrentDataType));
-            VariableLocation.Add(identifier.Lexeme, $"{BP}-{BPOffset}");
+            if (CurrentVariableScope == VariableScope.MethodBody)
+            {
+                // Not handling class body
+
+                BPOffset += GetDataTypeSize(GetDataType(CurrentDataType));
+                VariableLocation.Add(identifier.Lexeme, $"{BP}-{BPOffset}");
+            }
 
             if (CurrentToken.Type == TokenType.Comma)
             {
@@ -1117,7 +1127,7 @@ namespace Compiler.Services
             while (parameterList != null)
             {
                 sum -= GetDataTypeSize(parameterList.Value.Value);
-                VariableLocation[parameterList.Value.Key]  = $"{BP}+{sum}";
+                VariableLocation[parameterList.Value.Key] = $"{BP}+{sum}";
                 parameterList = parameterList.Next;
             }
         }
