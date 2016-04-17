@@ -20,6 +20,7 @@ namespace Compiler.Services
         public const int RETURN_EXPRESSION = 0;
         public const int ASSIGNMENT = 1;
         public const int ASSIGNMENT_VIA_METHOD_CALL = 2;
+        public const int METHOD_CALL = 3;
 
         private List<Token> _Tokens = new List<Token>();
         private Stack<Token> _PostfixStack = new Stack<Token>();
@@ -75,6 +76,17 @@ namespace Compiler.Services
 
         private string Evaluate(Dictionary<string, string> variableLocations)
         {
+            Func<string, string> getStackAddress = (string variableName) => {
+
+                if (variableLocations.ContainsKey(variableName))
+                {
+                    return variableLocations[variableName];
+                }
+
+                throw new Exception($"{variableName} isn't allocated on the stack");
+            };
+
+
             if (Mode == RETURN_EXPRESSION)
             {
                 ShuntYardToPostFix(_Tokens);
@@ -100,11 +112,28 @@ namespace Compiler.Services
 
                 foreach (var parameter in parameters)
                 {
+                    // TODO: USE stack address
                     str.AppendLine($"push {parameter.Lexeme}");
                 }
 
                 str.AppendLine($"call {methodToken.Lexeme}");
-                str.Append($"{variableToken.Lexeme} = _AX");
+                str.Append($"{getStackAddress(variableToken.Lexeme)} = _AX");
+
+                return str.ToString();
+            }
+            else if (Mode == METHOD_CALL)
+            {
+                var classToken = _Tokens[0];
+                var methodToken = _Tokens[1];
+                var parameters = _Tokens.Skip(2).Reverse();
+                var str = new StringBuilder();
+
+                foreach (var parameter in parameters)
+                {
+                    str.AppendLine($"push {parameter.Lexeme}");
+                }
+
+                str.Append($"call {methodToken.Lexeme}");
 
                 return str.ToString();
             }

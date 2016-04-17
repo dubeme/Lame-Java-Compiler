@@ -448,12 +448,10 @@ namespace Compiler.Services
 
             if (CurrentToken.Type == TokenType.Identifier)
             {
-                ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT;
                 AssignmentStatement();
             }
             else
             {
-                ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT_VIA_METHOD_CALL;
                 IOStatement();
             }
             PopProduction();
@@ -464,51 +462,61 @@ namespace Compiler.Services
             // AssignmentStatement -> idt = Expression | idt = MethodCall | MethodCall
             PushProduction("AssignmentStatement");
             var identifier = CurrentToken.Lexeme;
+            var entry = SymbolTable.Lookup(identifier);
 
-            ExpressionExpander.Push(CurrentToken);
-            MatchAndSetToken(TokenType.Identifier);
-
-            if (SymbolTable.Lookup(identifier) == null)
+            if (entry == null)
             {
                 throw new UndeclaredIdentifierException(identifier);
             }
-
-            ExpressionExpander.Push(CurrentToken);
-            MatchAndSetToken(TokenType.Assignment);
-
-            if (CurrentToken.Type == TokenType.Identifier)
+            else if (entry.Type == EntryType.Class)
             {
-                var entry = SymbolTable.Lookup(CurrentToken.Lexeme);
-
-                if (entry == null)
-                {
-                    throw new UndeclaredIdentifierException(identifier);
-                }
-
-                switch (entry.Type)
-                {
-                    case EntryType.Variable:
-                        // An assignment with method expression
-                        ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT;
-                        Expression();
-                        break;
-
-                    case EntryType.Class:
-                        // Assignment with method call
-                        // Since methods are called as if they're static
-                        ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT_VIA_METHOD_CALL;
-                        MethodCall();
-                        break;
-
-                    default:
-                        throw new Exception("Invalid operation");
-                }
+                // MethodCall
+                ExpressionExpander.Mode = IntermediateCodeGeneratorService.METHOD_CALL;
+                MethodCall();
             }
             else
             {
-                // An assignment with expression
-                ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT;
-                Expression();
+                // assignment
+                ExpressionExpander.Push(CurrentToken);
+                MatchAndSetToken(TokenType.Identifier);
+
+                ExpressionExpander.Push(CurrentToken);
+                MatchAndSetToken(TokenType.Assignment);
+
+                if (CurrentToken.Type == TokenType.Identifier)
+                {
+                    entry = SymbolTable.Lookup(CurrentToken.Lexeme);
+
+                    if (entry == null)
+                    {
+                        throw new UndeclaredIdentifierException(identifier);
+                    }
+
+                    switch (entry.Type)
+                    {
+                        case EntryType.Variable:
+                            // An assignment with method expression
+                            ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT;
+                            Expression();
+                            break;
+
+                        case EntryType.Class:
+                            // Assignment with method call
+                            // Since methods are called as if they're static
+                            ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT_VIA_METHOD_CALL;
+                            MethodCall();
+                            break;
+
+                        default:
+                            throw new Exception("Invalid operation");
+                    }
+                }
+                else
+                {
+                    // An assignment with expression
+                    ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT;
+                    Expression();
+                }
             }
 
             PopProduction();
