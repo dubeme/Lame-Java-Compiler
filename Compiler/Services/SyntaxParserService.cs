@@ -1166,12 +1166,11 @@ namespace Compiler.Services
             if (useTab)
             {
                 var tab = "    ";
-                Console.WriteLine(tab + str.ToString().Replace("\n", $"\n{tab}"));
+                str = $"{tab}{str.ToString().Replace("\n", $"\n{tab}")}";
             }
-            else
-            {
-                Console.WriteLine(str.ToString());
-            }
+
+            CompilerService.PrintToFile(str);
+            Console.WriteLine(str);
         }
     }
 }

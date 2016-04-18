@@ -1,7 +1,6 @@
 ﻿using Compiler.Models;
 using System;
 using System.IO;
-using System.Text;
 
 namespace Compiler.Services
 {
@@ -11,10 +10,14 @@ namespace Compiler.Services
         private static ConsoleColor ErrorColor = ConsoleColor.Red;
         private static ConsoleColor InfoColor = ConsoleColor.Yellow;
 
+        private static TextWriter FileIn;
+
         public void Compile(string fileName)
         {
+            var outFIlePath = $"{Path.GetFileNameWithoutExtension(fileName)}.tac";
             try
             {
+                FileIn = File.CreateText(outFIlePath);
                 var streamReader = new StreamReader(fileName);
                 var lexAnalyzer = new LexicalAnalyzerService(streamReader);
                 var symbolTable = new SymbolTable
@@ -29,9 +32,17 @@ namespace Compiler.Services
 
                 PrintSourceCode(File.ReadAllText(fileName));
                 syntaxParser.Parse();
+                FileIn.Close();
             }
             catch (Exception ex)
             {
+                // Delete out file
+                if (File.Exists(outFIlePath))
+                {
+                    FileIn.Close();
+                    File.Delete(outFIlePath);
+                }
+
                 Print("Oops, there seems to be something wrong.\n\n", ErrorColor);
                 Print(ex.Message, ErrorColor);
             }
@@ -76,27 +87,10 @@ namespace Compiler.Services
             }
         }
 
-        public static void CompileString(string str)
+        public static void CompileFile(string fileName)
         {
-            try
-            {
-                var memStream = new MemoryStream(Encoding.UTF8.GetBytes(str));
-                var streamReader = new StreamReader(memStream);
-                var lexAnalyzer = new LexicalAnalyzerService(streamReader);
-                var symbolTable = new SymbolTable
-                {
-                    Printer = Console.WriteLine
-                };
-
-                var syntaxParser = new SyntaxParserService(lexAnalyzer, symbolTable);
-
-                syntaxParser.Parse();
-            }
-            catch (Exception ex)
-            {
-                Print("Oops, there seems to be something wrong.\n\n", ErrorColor);
-                Print(ex.Message, ErrorColor);
-            }
+            var compiler = new CompilerService();
+            compiler.Compile(fileName);
         }
 
         public static void PrintSourceCode(string sourceCode)
@@ -111,7 +105,7 @@ namespace Compiler.Services
 
             foreach (var line in lines)
             {
-                Print($"{lineNumber, 6}| {line}", ConsoleColor.Cyan);
+                Print($"{lineNumber,6}| {line}", ConsoleColor.Cyan);
                 lineNumber++;
             }
 
@@ -132,6 +126,21 @@ namespace Compiler.Services
                 Console.Write(obj);
             }
             Console.ForegroundColor = cc;
+        }
+
+        public static void PrintToFile(object obj, bool newLine = true)
+        {
+            if (obj != null && FileIn != null)
+            {
+                if (newLine)
+                {
+                    FileIn.WriteLine(obj);
+                }
+                else
+                {
+                    FileIn.Write(obj);
+                }
+            }
         }
     }
 }

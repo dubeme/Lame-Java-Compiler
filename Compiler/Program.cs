@@ -45,7 +45,7 @@ namespace Compiler
                 {
                     var sourceCode = System.IO.File.ReadAllText(codeFile);
                     CompilerService.PrintSourceCode(sourceCode);
-                    CompilerService.CompileString(sourceCode);
+                    CompilerService.CompileFile(codeFile);
                     Console.WriteLine($"\n\nPlease press enter to continue ... ");
                     Console.ReadLine();
                     Console.Clear();
