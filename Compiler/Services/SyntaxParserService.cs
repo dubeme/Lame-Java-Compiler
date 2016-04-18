@@ -194,9 +194,11 @@ namespace Compiler.Services
                 if (CurrentVariableScope == VariableScope.MethodBody)
                 {
                     // Not handling class body
+                    // For constants, push their value since it is know at compile time, 
+                    // there's no need to add it to the stack
 
-                    BPOffset += GetDataTypeSize(GetDataType(dataType));
-                    VariableLocation.Add(identifier.Lexeme, $"{BP}-{BPOffset}");
+                    // BPOffset += GetDataTypeSize(GetDataType(dataType));
+                    VariableLocation.Add(identifier.Lexeme, $"{value}");
                 }
             }
             else
@@ -495,7 +497,8 @@ namespace Compiler.Services
                     switch (entry.Type)
                     {
                         case EntryType.Variable:
-                            // An assignment with method expression
+                        case EntryType.Constant:
+                            // An assignment with expression
                             ExpressionExpander.Mode = IntermediateCodeGeneratorService.ASSIGNMENT;
                             Expression();
                             break;
