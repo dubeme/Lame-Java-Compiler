@@ -23,6 +23,14 @@ namespace Compiler
                 const string FILE_PATH = @"..\..\..\Compiler.Test\test.files\";
 
                 var testCodeFiles = new string[] {
+                    $@"{FILE_PATH}\more\test1.java",
+                    $@"{FILE_PATH}\more\test2.java",
+                    $@"{FILE_PATH}\more\test3.java",
+                    $@"{FILE_PATH}\more\test4.java",
+                    $@"{FILE_PATH}\more\test5.java",
+                    $@"{FILE_PATH}\more\test6.java",
+                    $@"{FILE_PATH}\more\test7.java",
+                    $@"{FILE_PATH}\more\test8.java",
                     $@"{FILE_PATH}justMain.java",
                     $@"{FILE_PATH}main1Class.java",
                     $@"{FILE_PATH}main2Classes.java",
@@ -44,7 +52,6 @@ namespace Compiler
                 foreach (var codeFile in testCodeFiles)
                 {
                     var sourceCode = System.IO.File.ReadAllText(codeFile);
-                    CompilerService.PrintSourceCode(sourceCode);
                     CompilerService.CompileFile(codeFile);
                     Console.WriteLine($"\n\nPlease press enter to continue ... ");
                     Console.ReadLine();
