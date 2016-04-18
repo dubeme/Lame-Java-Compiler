@@ -470,6 +470,10 @@ namespace Compiler.Services
             {
                 throw new UndeclaredIdentifierException(identifier);
             }
+            else if (entry.Type == EntryType.Constant)
+            {
+                throw new InvalidOperationException("A constant variable can't be used in an assignment statement");
+            }
             else if (entry.Type == EntryType.Class)
             {
                 // MethodCall
