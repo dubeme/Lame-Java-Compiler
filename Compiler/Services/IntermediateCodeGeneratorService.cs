@@ -112,8 +112,14 @@ namespace Compiler.Services
 
                 foreach (var parameter in parameters)
                 {
-                    // TODO: USE stack address
-                    str.AppendLine($"push {parameter.Lexeme}");
+                    if (parameter.Type == TokenType.Identifier)
+                    {
+                        str.AppendLine($"push {getStackAddress(parameter.Lexeme)}");
+                    }
+                    else
+                    {
+                        str.AppendLine($"push {parameter.Lexeme}");
+                    }
                 }
 
                 str.AppendLine($"call {methodToken.Lexeme}");
@@ -130,7 +136,14 @@ namespace Compiler.Services
 
                 foreach (var parameter in parameters)
                 {
-                    str.AppendLine($"push {parameter.Lexeme}");
+                    if (parameter.Type == TokenType.Identifier)
+                    {
+                        str.AppendLine($"push {getStackAddress(parameter.Lexeme)}");
+                    }
+                    else
+                    {
+                        str.AppendLine($"push {parameter.Lexeme}");
+                    }
                 }
 
                 str.Append($"call {methodToken.Lexeme}");
