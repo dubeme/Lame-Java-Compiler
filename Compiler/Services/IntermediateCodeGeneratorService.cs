@@ -6,50 +6,135 @@ using System.Text;
 
 namespace Compiler.Services
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class IntermediateCodeGeneratorService
     {
+        /// <summary>
+        /// The name
+        /// </summary>
         private const int NAME = 0;
+        /// <summary>
+        /// The operan d1
+        /// </summary>
         private const int OPERAND1 = 1;
+        /// <summary>
+        /// The operator
+        /// </summary>
         private const int OPERATOR = 2;
+        /// <summary>
+        /// The operan d2
+        /// </summary>
         private const int OPERAND2 = 3;
+        /// <summary>
+        /// The negat e_ operan d1
+        /// </summary>
         private const int NEGATE_OPERAND1 = 4;
+        /// <summary>
+        /// The negat e_ operan d2
+        /// </summary>
         private const int NEGATE_OPERAND2 = 5;
+        /// <summary>
+        /// The size
+        /// </summary>
         private const int SIZE = 6;
 
+        /// <summary>
+        /// The invali d_ mode
+        /// </summary>
         private const int INVALID_MODE = -1;
+        /// <summary>
+        /// The retur n_ expression
+        /// </summary>
         public const int RETURN_EXPRESSION = 0;
+        /// <summary>
+        /// The assignment
+        /// </summary>
         public const int ASSIGNMENT = 1;
+        /// <summary>
+        /// The assignmen t_ vi a_ metho d_ call
+        /// </summary>
         public const int ASSIGNMENT_VIA_METHOD_CALL = 2;
+        /// <summary>
+        /// The metho d_ call
+        /// </summary>
         public const int METHOD_CALL = 3;
 
+        /// <summary>
+        /// The _ tokens
+        /// </summary>
         private List<Token> _Tokens = new List<Token>();
+        /// <summary>
+        /// The _ postfix stack
+        /// </summary>
         private Stack<Token> _PostfixStack = new Stack<Token>();
+        /// <summary>
+        /// The _ operators
+        /// </summary>
         private Stack<Token> _Operators = new Stack<Token>();
+        /// <summary>
+        /// The _ variable locations
+        /// </summary>
         private Dictionary<string, string> _VariableLocations = new Dictionary<string, string>();
 
 
+        /// <summary>
+        /// The _ total temporary variable size
+        /// </summary>
         private int _TotalTempVariableSize = 0;
+        /// <summary>
+        /// The _ variable name count
+        /// </summary>
         private int _VariableNameCount = 0;
+        /// <summary>
+        /// The _ bp offset
+        /// </summary>
         private int _BPOffset = 0;
 
 
+        /// <summary>
+        /// The prefix
+        /// </summary>
         private static string PREFIX = "_";
+        /// <summary>
+        /// The generate d_ nam e_ prefix
+        /// </summary>
         private static string GENERATED_NAME_PREFIX = $"{PREFIX}t";
+        /// <summary>
+        /// The retur n_ register
+        /// </summary>
         private static string RETURN_REGISTER = $"{PREFIX}AX";
+        /// <summary>
+        /// The b p_ register
+        /// </summary>
         private static string BP_REGISTER = $"{PREFIX}BP";
 
+        /// <summary>
+        /// Gets or sets the mode of this IntermediateCodeGeneratorService.
+        /// </summary>
         public int Mode { get; set; }
 
+        /// <summary>
+        /// Pushes the specified token.
+        /// </summary>
+        /// <param name="token">The token.</param>
         public void Push(Token token)
         {
             _Tokens.Add(token);
         }
 
+        /// <summary>
+        /// Pops this instance.
+        /// </summary>
         public void Pop()
         {
             _Tokens.RemoveAt(_Tokens.Count - 1);
         }
 
+        /// <summary>
+        /// Clears this instance.
+        /// </summary>
         public void Clear()
         {
             _Tokens.Clear();
@@ -59,6 +144,9 @@ namespace Compiler.Services
             Mode = INVALID_MODE;
         }
 
+        /// <summary>
+        /// Resets this instance.
+        /// </summary>
         public void Reset()
         {
             Clear();
@@ -66,6 +154,12 @@ namespace Compiler.Services
             _TotalTempVariableSize = 0;
         }
 
+        /// <summary>
+        /// Generates the intermediate code.
+        /// </summary>
+        /// <param name="printer">The printer.</param>
+        /// <param name="variableLocations">The variable locations.</param>
+        /// <param name="bpOffset">The bp offset.</param>
         public void GenerateIntermediateCode(Action<object> printer, Dictionary<string, string> variableLocations, int bpOffset)
         {
             _BPOffset = bpOffset;
@@ -74,6 +168,12 @@ namespace Compiler.Services
             // printer($"\n\n{this.ToString()}\n\n");
         }
 
+        /// <summary>
+        /// Evaluates the specified variable locations.
+        /// </summary>
+        /// <param name="variableLocations">The variable locations.</param>
+        /// <returns></returns>
+        /// <exception cref="System.Exception"></exception>
         private string Evaluate(Dictionary<string, string> variableLocations)
         {
             Func<string, string> getStackAddress = (string variableName) => {
@@ -177,6 +277,10 @@ namespace Compiler.Services
             }
         }
 
+        /// <summary>
+        /// Shunts the yard to post fix.
+        /// </summary>
+        /// <param name="tokens">The tokens.</param>
         private void ShuntYardToPostFix(IEnumerable<Token> tokens)
         {
             foreach (var token in tokens)
@@ -262,6 +366,11 @@ namespace Compiler.Services
             }
         }
 
+        /// <summary>
+        /// Parses the postfix stack.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="System.Exception">Invalid expression</exception>
         private IList<object[]> ParsePostfixStack()
         {
             var reverseStack = this._PostfixStack.Reverse();
@@ -318,6 +427,10 @@ namespace Compiler.Services
             return expressionList;
         }
 
+        /// <summary>
+        /// Generates the name of the variable.
+        /// </summary>
+        /// <returns></returns>
         private string GenerateVariableName()
         {
             var name = $"{GENERATED_NAME_PREFIX}{++_VariableNameCount}";
@@ -329,6 +442,16 @@ namespace Compiler.Services
             return name;
         }
 
+        /// <summary>
+        /// Creates the entry.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="operand1">The operand1.</param>
+        /// <param name="operator">The operator.</param>
+        /// <param name="operand2">The operand2.</param>
+        /// <param name="negateOperand1">The negate operand1.</param>
+        /// <param name="negateOperand2">The negate operand2.</param>
+        /// <returns></returns>
         private static object[] CreateEntry(
             object name = null,
             object operand1 = null,
@@ -349,6 +472,12 @@ namespace Compiler.Services
             return entry;
         }
 
+        /// <summary>
+        /// Stringifies the expression list.
+        /// </summary>
+        /// <param name="expressionList">The expression list.</param>
+        /// <param name="variableLocations">The variable locations.</param>
+        /// <returns></returns>
         private static string StringifyExpressionList(IList<object[]> expressionList, Dictionary<string, string> variableLocations)
         {
             var res = new StringBuilder();
@@ -361,7 +490,7 @@ namespace Compiler.Services
                 // Add visual indicator for negation
                 if (item[NEGATE_OPERAND1] != null && (bool)item[NEGATE_OPERAND1])
                 {
-                    operandStr = $"{"[" + operandStr + "]",15 }";
+                    operandStr = $"{"-" + operandStr ,15 }";
                 }
 
                 str = $"{str}{operandStr, 15}";
@@ -374,7 +503,7 @@ namespace Compiler.Services
                     // Add visual indicator for negation
                     if (item[NEGATE_OPERAND2] != null && (bool)item[NEGATE_OPERAND2])
                     {
-                        operandStr = $"[{operandStr}]";
+                        operandStr = $"-{operandStr}";
                     }
 
                     str = $"{str}{operandStr}";
@@ -386,6 +515,12 @@ namespace Compiler.Services
             return res.ToString().TrimEnd();
         }
 
+        /// <summary>
+        /// Gets the stack based location.
+        /// </summary>
+        /// <param name="obj">The object.</param>
+        /// <param name="variableLocations">The variable locations.</param>
+        /// <returns></returns>
         private static string GetStackBasedLocation(object obj, Dictionary<string, string> variableLocations)
         {
             var str = string.Empty;
@@ -414,6 +549,11 @@ namespace Compiler.Services
             return str;
         }
 
+        /// <summary>
+        /// Simplifies the expression list.
+        /// </summary>
+        /// <param name="expressionList">The expression list.</param>
+        /// <returns></returns>
         private static IList<object[]> SimplifyExpressionList(IList<object[]> expressionList)
         {
             return expressionList.Where(exp =>
@@ -429,6 +569,11 @@ namespace Compiler.Services
             }).ToList();
         }
 
+        /// <summary>
+        /// Determines whether [is number or variable] [the specified token].
+        /// </summary>
+        /// <param name="token">The token.</param>
+        /// <returns></returns>
         private static bool IsNumberOrVariable(Token token)
         {
             return
@@ -437,21 +582,41 @@ namespace Compiler.Services
                 token.Type == TokenType.Identifier;
         }
 
+        /// <summary>
+        /// Determines whether the specified item is boolean.
+        /// </summary>
+        /// <param name="item">The item.</param>
+        /// <returns></returns>
         private static bool IsBoolean(Token item)
         {
             return item.Type == TokenType.True || item.Type == TokenType.False;
         }
 
+        /// <summary>
+        /// Determines whether [is add sub] [the specified type].
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
         private static bool IsAddSub(TokenType type)
         {
             return type == TokenType.Plus || type == TokenType.Minus;
         }
 
+        /// <summary>
+        /// Determines whether [is mult div] [the specified type].
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
         private static bool IsMultDiv(TokenType type)
         {
             return type == TokenType.Multiplication || type == TokenType.Divide;
         }
 
+        /// <summary>
+        /// Determines whether [is arithmetic operator] [the specified type].
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
         private static bool IsArithmeticOperator(TokenType type)
         {
             return
@@ -461,6 +626,12 @@ namespace Compiler.Services
                 type == TokenType.Minus;
         }
 
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
         public override string ToString()
         {
             if (!_PostfixStack.Any())
