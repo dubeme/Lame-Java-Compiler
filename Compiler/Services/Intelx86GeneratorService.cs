@@ -92,7 +92,7 @@ namespace Compiler.Services
                         printer($@"{"",TAB_INDENT}mov bp, sp");
                         printer($@"{"",TAB_INDENT}sub sp, {methodLocalBytes[methodName]}");
                     }
-                    printer("\n");
+                    PrintNewLine(printer);
                 }
                 else if (temp[0] == ENDP)
                 {
@@ -122,7 +122,7 @@ namespace Compiler.Services
                         printer($@"{methodName,TAB_INDENT}endp");
                     }
 
-                    printer("\n");
+                    PrintNewLine(printer);
                 }
                 else if (temp[0] == CALL)
                 {
@@ -153,7 +153,7 @@ namespace Compiler.Services
                     }
 
                     printer($@"{"",TAB_INDENT}mov [BP{GetBPOffset(leftHand)}], AX    #{leftHand} = {operand1}");
-                    printer("\n");
+                    PrintNewLine(printer);
                 }
                 else if (temp.Length == OPERATION)
                 {
@@ -173,14 +173,14 @@ namespace Compiler.Services
 
                     if (oper2.StartsWith(IntermediateCodeGeneratorService.BP_REGISTER))
                     {
-                        oper2 = $"[BP{GetBPOffset(oper1)}]";
+                        oper2 = $"[BP{GetBPOffset(oper2)}]";
                     }
 
                     if (@operator == "*")
                     {
-                        printer($@"{"",TAB_INDENT}mult AX, {oper2}");
+                        printer($@"{"",TAB_INDENT}mul AX, {oper2}");
                     }
-                    else if(@operator == "/")
+                    else if (@operator == "/")
                     {
                         printer($@"{"",TAB_INDENT}div AX, {oper2}");
                     }
@@ -188,7 +188,7 @@ namespace Compiler.Services
                     {
                         printer($@"{"",TAB_INDENT}add AX, {oper2}");
                     }
-                    else if(@operator == "-")
+                    else if (@operator == "-")
                     {
                         printer($@"{"",TAB_INDENT}sub AX, {oper2}");
                     }
@@ -198,13 +198,18 @@ namespace Compiler.Services
                     }
 
                     printer($@"{"",TAB_INDENT}mov [BP{GetBPOffset(lh)}], AX    #{lh} = {oper1} {@operator} {temp[4]}");
-                    printer("\n");
+                    PrintNewLine(printer);
                 }
                 else
                 {
                     throw new Exception("Invalid Three address code format");
                 }
             }
+        }
+
+        private static void PrintNewLine(Action<string> printer)
+        {
+            printer("");
         }
     }
 }
