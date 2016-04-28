@@ -46,6 +46,8 @@ namespace Compiler.Services
         }
 
         public Dictionary<string, string> GlobalStrings { get; set; }
+        public Dictionary<string, int> MethodLocalSize { get; set; }
+        public Dictionary<string, int> MethodParamSize { get; set; }
 
         private int Depth;
         private int Offset;
@@ -68,6 +70,8 @@ namespace Compiler.Services
             this.LexicalAnalyzer = lexAnalyzer;
             this.SymbolTable = symbolTable;
             this.GlobalStrings = new Dictionary<string, string>();
+            MethodParamSize = new Dictionary<string, int>();
+            MethodLocalSize = new Dictionary<string, int>();
         }
 
         public void Parse()
@@ -292,14 +296,14 @@ namespace Compiler.Services
                 var returnType = CurrentToken.Type;
                 Type();
 
-                var identifier = CurrentToken;
+                var methodIdentifierToken = CurrentToken;
                 MatchAndSetToken(TokenType.Identifier);
 
                 // Insert method in symbol table
-                InsertMethod(returnType, identifier);
+                InsertMethod(returnType, methodIdentifierToken);
 
                 // Print intermediate code for procedure
-                IntermediateCodePrinter($"proc {identifier.Lexeme}", false);
+                IntermediateCodePrinter($"proc {methodIdentifierToken.Lexeme}", false);
 
                 // Reset expression expander
                 ExpressionExpander.Reset();
@@ -340,7 +344,12 @@ namespace Compiler.Services
                 MatchAndSetToken(TokenType.Semicolon);
                 MatchAndSetToken(TokenType.CloseCurlyBrace);
 
-                IntermediateCodePrinter($"endp {identifier.Lexeme}\n", false);
+                IntermediateCodePrinter($"endp {methodIdentifierToken.Lexeme}\n", false);
+
+                // Record the local and parameter byte size
+                MethodParamSize.Add(methodIdentifierToken.Lexeme, CurrentMethod.ParameterSize);
+                MethodLocalSize.Add(methodIdentifierToken.Lexeme, 
+                    CurrentMethod.SizeOfLocal + ExpressionExpander.TotalTempVariableSize);
 
                 // Exit current scope
                 PerformScopeExitAction();
@@ -1162,6 +1171,7 @@ namespace Compiler.Services
                 CurrentMethod.Parameters = paramType;
 
                 CurrentMethod.NumberOfParameters++;
+                CurrentMethod.ParameterSize += _size;
             }
             else if (_scope == VariableScope.ClassBody)
             {
