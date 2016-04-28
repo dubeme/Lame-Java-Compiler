@@ -650,6 +650,7 @@ namespace Compiler.Services
             //IOStatement -> InStatement | OutStatement
             PushProduction("IOStatement");
 
+            ExpressionExpander.Mode = IntermediateCodeGeneratorService.IO_METHOD_CALL;
             if (CurrentToken.Lexeme == READ)
             {
                 InStatement();
@@ -719,7 +720,7 @@ namespace Compiler.Services
             PushProduction("OutStatement");
 
             var identifier = CurrentToken.Lexeme;
-            if (identifier != WRITE || identifier != WRITE_LN)
+            if (identifier != WRITE && identifier != WRITE_LN)
             {
                 throw new MissingTokenException($"{WRITE}|{WRITE_LN}", identifier, "OutStatement");
             }

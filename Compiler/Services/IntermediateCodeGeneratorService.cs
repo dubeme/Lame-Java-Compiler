@@ -62,6 +62,11 @@ namespace Compiler.Services
         public const int METHOD_CALL = 3;
 
         /// <summary>
+        /// The IO method call
+        /// </summary>
+        public const int IO_METHOD_CALL = 4;
+
+        /// <summary>
         /// The _ tokens
         /// </summary>
         private List<Token> _Tokens = new List<Token>();
@@ -232,6 +237,28 @@ namespace Compiler.Services
                 var classToken = _Tokens[0];
                 var methodToken = _Tokens[1];
                 var parameters = _Tokens.Skip(2).Reverse();
+                var str = new StringBuilder();
+
+                foreach (var parameter in parameters)
+                {
+                    if (parameter.Type == TokenType.Identifier)
+                    {
+                        str.AppendLine($"push {getStackAddress(parameter.Lexeme)}");
+                    }
+                    else
+                    {
+                        str.AppendLine($"push {parameter.Lexeme}");
+                    }
+                }
+
+                str.Append($"call {methodToken.Lexeme}");
+
+                return str.ToString();
+            }
+            else if (Mode == IO_METHOD_CALL)
+            {
+                var methodToken = _Tokens[0];
+                var parameters = _Tokens.Skip(1).Reverse();
                 var str = new StringBuilder();
 
                 foreach (var parameter in parameters)

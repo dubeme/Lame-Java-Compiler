@@ -23,30 +23,11 @@ namespace Compiler
                 const string FILE_PATH = @"..\..\..\Compiler.Test\test.files\";
 
                 var testCodeFiles = new string[] {
-                    $@"{FILE_PATH}\more\test1.java",
-                    $@"{FILE_PATH}\more\test2.java",
-                    $@"{FILE_PATH}\more\test3.java",
-                    $@"{FILE_PATH}\more\test4.java",
-                    $@"{FILE_PATH}\more\test5.java",
-                    $@"{FILE_PATH}\more\test6.java",
-                    $@"{FILE_PATH}\more\test7.java",
-                    $@"{FILE_PATH}\more\test8.java",
-                    $@"{FILE_PATH}justMain.java",
-                    $@"{FILE_PATH}main1Class.java",
-                    $@"{FILE_PATH}main2Classes.java",
-                    $@"{FILE_PATH}classWithFields.java",
-                    $@"{FILE_PATH}classWithFieldsAndMethod.java",
-                    $@"{FILE_PATH}classWithFieldsAndMethods.java",
-                    $@"{FILE_PATH}classWithFieldsMethodsParameters.java",
-                    $@"{FILE_PATH}classWithFieldsMethodsParametersAndLocals.java",
-                    $@"{FILE_PATH}classWithConstant.java",
-                    $@"{FILE_PATH}classWithExpression.java",
-                    $@"{FILE_PATH}classWithExpressionBasic.java",
-                    $@"{FILE_PATH}classWithExpressionSimpleArithmetic.java",
-                    $@"{FILE_PATH}classWithExpressionBoolean.java",
-                    $@"{FILE_PATH}classWithExpressionPemdas.java",
-                    $@"{FILE_PATH}classWithExpressionUndeclared1.java",
-                    $@"{FILE_PATH}classWithExpressionUndeclared2.java"
+                    $@"{FILE_PATH}\8\test0.java",
+                    $@"{FILE_PATH}\8\test1.java",
+                    $@"{FILE_PATH}\8\test2.java",
+                    $@"{FILE_PATH}\8\test3.java",
+                    $@"{FILE_PATH}\8\test4.java",
                 };
 
                 foreach (var codeFile in testCodeFiles)
