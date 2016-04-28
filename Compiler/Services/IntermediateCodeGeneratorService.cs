@@ -83,11 +83,11 @@ namespace Compiler.Services
         /// </summary>
         private Dictionary<string, string> _VariableLocations = new Dictionary<string, string>();
 
-
         /// <summary>
-        /// The _ total temporary variable size
+        /// Gets the total size of the temporary variable.
         /// </summary>
-        private int _TotalTempVariableSize = 0;
+        public int TotalTempVariableSize { get; private set; }
+
         /// <summary>
         /// The _ variable name count
         /// </summary>
@@ -156,7 +156,7 @@ namespace Compiler.Services
         {
             Clear();
             _VariableNameCount = 0;
-            _TotalTempVariableSize = 0;
+            TotalTempVariableSize = 0;
         }
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace Compiler.Services
             _BPOffset = bpOffset;
             printer(Evaluate(variableLocations));
             // Uncomment to print postfix expresion
-            // printer($"\n\n{this.ToString()}\n\n");
+            // printer($"\n\n{this.ToString()}\n\n
         }
 
         /// <summary>
@@ -472,8 +472,8 @@ namespace Compiler.Services
             var name = $"{GENERATED_NAME_PREFIX}{++_VariableNameCount}";
 
             // Assume only 2 byte data size
-            _TotalTempVariableSize += 2;
-            _VariableLocations.Add(name, $"{BP_REGISTER}-{_BPOffset + _TotalTempVariableSize}");
+            TotalTempVariableSize += 2;
+            _VariableLocations.Add(name, $"{BP_REGISTER}-{_BPOffset + TotalTempVariableSize}");
 
             return name;
         }
