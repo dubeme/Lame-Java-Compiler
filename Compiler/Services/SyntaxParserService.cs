@@ -1344,7 +1344,7 @@ namespace Compiler.Services
             }
 
             CompilerService.PrintToFile(str);
-            Console.WriteLine(str);
+            // Console.WriteLine(str);
         }
     }
 }

@@ -28,6 +28,14 @@ namespace Compiler
                     $@"{FILE_PATH}\8\test2.java",
                     $@"{FILE_PATH}\8\test3.java",
                     $@"{FILE_PATH}\8\test4.java",
+                    $@"{FILE_PATH}\7\test1.java",
+                    $@"{FILE_PATH}\7\test2.java",
+                    $@"{FILE_PATH}\7\test3.java",
+                    $@"{FILE_PATH}\7\test4.java",
+                    $@"{FILE_PATH}\7\test5.java",
+                    $@"{FILE_PATH}\7\test6.java",
+                    $@"{FILE_PATH}\7\test7.java",
+                    $@"{FILE_PATH}\7\test8.java"
                 };
 
                 foreach (var codeFile in testCodeFiles)

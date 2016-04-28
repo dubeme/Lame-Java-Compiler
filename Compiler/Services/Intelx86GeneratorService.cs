@@ -14,6 +14,8 @@ namespace Compiler.Services
         private const string CALL = "call";
         private const string PUSH = "push";
         private const string MAIN = "main";
+        private static int OPERATION = 5;
+        private static int JUST_ASSIGNMENT = 3;
 
         public static void Generate(
             string[] tacCodeLines,
@@ -23,7 +25,7 @@ namespace Compiler.Services
             Action<string> printer)
         {
             StringBuilder buffer = new StringBuilder();
-            Action<string> bufferer = (str) => 
+            Action<string> bufferer = (str) =>
             {
                 buffer.AppendLine(str);
             };
@@ -59,6 +61,11 @@ namespace Compiler.Services
             Dictionary<string, int> methodParameterBytes,
             Action<string> printer)
         {
+            Func<string, string> GetBPOffset = (str) =>
+            {
+                return Regex.Replace(str, $"^({IntermediateCodeGeneratorService.BP_REGISTER})", "");
+            };
+
             foreach (var line in tacCodeLines)
             {
                 if (string.IsNullOrWhiteSpace(line))
@@ -85,6 +92,7 @@ namespace Compiler.Services
                         printer($@"{"",TAB_INDENT}mov bp, sp");
                         printer($@"{"",TAB_INDENT}sub sp, {methodLocalBytes[methodName]}");
                     }
+                    printer("\n");
                 }
                 else if (temp[0] == ENDP)
                 {
@@ -95,7 +103,7 @@ namespace Compiler.Services
                         printer($@"{"",TAB_INDENT}mov ah, 04ch");
                         printer($@"{"",TAB_INDENT}int 21h");
                         printer($@"{"start",TAB_INDENT}endp");
-                        printer($@"{"",TAB_INDENT} end start");
+                        printer($@"{"",TAB_INDENT}end start");
                     }
                     else
                     {
@@ -123,6 +131,78 @@ namespace Compiler.Services
                 else if (temp[0] == PUSH)
                 {
                     printer($@"{"",TAB_INDENT}push {temp[1]}");
+                }
+                else if (temp.Length == JUST_ASSIGNMENT)
+                {
+                    var leftHand = temp[0];
+                    var operand1 = temp[2].TrimStart('-');
+                    var negateOperand1 = temp[2].StartsWith("-");
+
+                    if (operand1.StartsWith(IntermediateCodeGeneratorService.BP_REGISTER))
+                    {
+                        printer($@"{"",TAB_INDENT}mov AX, [BP{GetBPOffset(operand1)}]");
+
+                        if (negateOperand1)
+                        {
+                            printer($@"{"",TAB_INDENT}neg AX");
+                        }
+                    }
+                    else
+                    {
+                        printer($@"{"",TAB_INDENT}mov AX, {operand1}");
+                    }
+
+                    printer($@"{"",TAB_INDENT}mov [BP{GetBPOffset(leftHand)}], AX    #{leftHand} = {operand1}");
+                    printer("\n");
+                }
+                else if (temp.Length == OPERATION)
+                {
+                    var lh = temp[0];
+                    var oper1 = temp[2];
+                    var @operator = temp[3];
+                    var oper2 = temp[4];
+
+                    if (oper1.StartsWith(IntermediateCodeGeneratorService.BP_REGISTER))
+                    {
+                        printer($@"{"",TAB_INDENT}mov AX, [BP{GetBPOffset(oper1)}]");
+                    }
+                    else
+                    {
+                        printer($@"{"",TAB_INDENT}mov AX, {oper1}");
+                    }
+
+                    if (oper2.StartsWith(IntermediateCodeGeneratorService.BP_REGISTER))
+                    {
+                        oper2 = $"[BP{GetBPOffset(oper1)}]";
+                    }
+
+                    if (@operator == "*")
+                    {
+                        printer($@"{"",TAB_INDENT}mult AX, {oper2}");
+                    }
+                    else if(@operator == "/")
+                    {
+                        printer($@"{"",TAB_INDENT}div AX, {oper2}");
+                    }
+                    else if (@operator == "+")
+                    {
+                        printer($@"{"",TAB_INDENT}add AX, {oper2}");
+                    }
+                    else if(@operator == "-")
+                    {
+                        printer($@"{"",TAB_INDENT}sub AX, {oper2}");
+                    }
+                    else
+                    {
+                        throw new Exception($"Invalid operation {@operator}");
+                    }
+
+                    printer($@"{"",TAB_INDENT}mov [BP{GetBPOffset(lh)}], AX    #{lh} = {oper1} {@operator} {temp[4]}");
+                    printer("\n");
+                }
+                else
+                {
+                    throw new Exception("Invalid Three address code format");
                 }
             }
         }

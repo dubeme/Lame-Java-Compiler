@@ -109,11 +109,11 @@ namespace Compiler.Services
         /// <summary>
         /// The retur n_ register
         /// </summary>
-        private static string RETURN_REGISTER = $"{PREFIX}AX";
+        public readonly static string RETURN_REGISTER = $"{PREFIX}AX";
         /// <summary>
         /// The b p_ register
         /// </summary>
-        private static string BP_REGISTER = $"{PREFIX}BP";
+        public readonly static string BP_REGISTER = $"{PREFIX}BP";
 
         /// <summary>
         /// Gets or sets the mode of this IntermediateCodeGeneratorService.
