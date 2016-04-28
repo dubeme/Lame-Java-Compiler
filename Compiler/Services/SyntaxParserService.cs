@@ -452,13 +452,18 @@ namespace Compiler.Services
 
             PushProduction("Statement");
 
-            if (CurrentToken.Type == TokenType.Identifier)
+            if (CurrentToken.Type != TokenType.Identifier)
             {
-                AssignmentStatement();
+                MatchAndSetToken(TokenType.Identifier);
+            }
+
+            if (CurrentToken.Lexeme == READ || CurrentToken.Lexeme == WRITE || CurrentToken.Lexeme == WRITE_LN)
+            {
+                IOStatement();
             }
             else
             {
-                IOStatement();
+                AssignmentStatement();
             }
             PopProduction();
         }
@@ -668,6 +673,7 @@ namespace Compiler.Services
                 throw new MissingTokenException(READ, identifier, "InStatement");
             }
 
+            ExpressionExpander.Push(CurrentToken);
             MatchAndSetToken(TokenType.Identifier);
             MatchAndSetToken(TokenType.OpenParen);
             IO_IdentiferList();
@@ -682,6 +688,7 @@ namespace Compiler.Services
 
             PushProduction("IO_IdentiferList");
 
+            ExpressionExpander.Push(CurrentToken);
             MatchAndSetToken(TokenType.Identifier);
             IO_IdentiferListTail();
 
@@ -697,6 +704,7 @@ namespace Compiler.Services
             if (CurrentToken.Type == TokenType.Comma)
             {
                 MatchAndSetToken(TokenType.Comma);
+                ExpressionExpander.Push(CurrentToken);
                 MatchAndSetToken(TokenType.Identifier);
                 IO_IdentiferListTail();
             }
@@ -716,6 +724,7 @@ namespace Compiler.Services
                 throw new MissingTokenException($"{WRITE}|{WRITE_LN}", identifier, "OutStatement");
             }
 
+            ExpressionExpander.Push(CurrentToken);
             MatchAndSetToken(TokenType.Identifier);
             MatchAndSetToken(TokenType.OpenParen);
             WriteList();
@@ -756,7 +765,8 @@ namespace Compiler.Services
             //WriteToken -> idt | numt | literal
 
             PushProduction("WriteToken");
-
+            
+            ExpressionExpander.Push(CurrentToken);
             SetTokenIfAnyMatch(
                 TokenType.Identifier, 
                 TokenType.LiteralBoolean, 
