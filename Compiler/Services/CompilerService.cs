@@ -14,10 +14,12 @@ namespace Compiler.Services
 
         public void Compile(string fileName)
         {
-            var outFIlePath = $"{Path.GetFileNameWithoutExtension(fileName)}.tac";
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+            var tacFilePath = $"{fileNameWithoutExtension}.tac";
+            var asmFilePath = $"{fileNameWithoutExtension}.asm";
             try
             {
-                FileIn = File.CreateText(outFIlePath);
+                FileIn = File.CreateText(tacFilePath);
                 var streamReader = new StreamReader(fileName);
                 var lexAnalyzer = new LexicalAnalyzerService(streamReader);
                 var symbolTable = new SymbolTable
@@ -33,14 +35,24 @@ namespace Compiler.Services
                 PrintSourceCode(File.ReadAllText(fileName));
                 syntaxParser.Parse();
                 FileIn.Close();
+
+                Intelx86GeneratorService.Generate(
+                    File.ReadAllLines(tacFilePath),
+                    syntaxParser.GlobalStrings,
+                    syntaxParser.MethodLocalSize,
+                    syntaxParser.MethodParamSize,
+                    (str) => {
+
+                    });
+
             }
             catch (Exception ex)
             {
                 // Delete out file
-                if (File.Exists(outFIlePath))
+                if (File.Exists(tacFilePath))
                 {
                     FileIn.Close();
-                    File.Delete(outFIlePath);
+                    File.Delete(tacFilePath);
                 }
 
                 Print("Oops, there seems to be something wrong.\n\n", ErrorColor);
