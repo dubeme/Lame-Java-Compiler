@@ -57,6 +57,10 @@ namespace Compiler.Services
         private const int RETURN_ADDRESS_OLD_BP_OFFSET = 2 + 2;
         private const string BP = "_BP";
 
+        private const string READ = "read";
+        private const string WRITE = "write";
+        private const string WRITE_LN = "writeln";
+
         public SyntaxParserService(LexicalAnalyzerService lexAnalyzer, SymbolTable symbolTable)
         {
             this.LexicalAnalyzer = lexAnalyzer;
@@ -194,7 +198,7 @@ namespace Compiler.Services
                 if (CurrentVariableScope == VariableScope.MethodBody)
                 {
                     // Not handling class body
-                    // For constants, push their value since it is know at compile time, 
+                    // For constants, push their value since it is know at compile time,
                     // there's no need to add it to the stack
 
                     // BPOffset += GetDataTypeSize(GetDataType(dataType));
@@ -638,8 +642,128 @@ namespace Compiler.Services
 
         private void IOStatement()
         {
-            // IOStatement -> ε
+            //IOStatement -> InStatement | OutStatement
             PushProduction("IOStatement");
+
+            if (CurrentToken.Lexeme == READ)
+            {
+                InStatement();
+            }
+            else
+            {
+                OutStatement();
+            }
+
+            PopProduction();
+        }
+
+        private void InStatement()
+        {
+            //InStatement -> read(IO_IdentiferList)
+
+            PushProduction("InStatement");
+            var identifier = CurrentToken.Lexeme;
+            if (identifier != READ)
+            {
+                throw new MissingTokenException(READ, identifier, "InStatement");
+            }
+
+            MatchAndSetToken(TokenType.Identifier);
+            MatchAndSetToken(TokenType.OpenParen);
+            IO_IdentiferList();
+            MatchAndSetToken(TokenType.CloseParen);
+
+            PopProduction();
+        }
+
+        private void IO_IdentiferList()
+        {
+            //IO_IdentiferList -> idt  IO_IdentiferListTail
+
+            PushProduction("IO_IdentiferList");
+
+            MatchAndSetToken(TokenType.Identifier);
+            IO_IdentiferListTail();
+
+            PopProduction();
+        }
+
+        private void IO_IdentiferListTail()
+        {
+            //IO_IdentiferListTail ->  , idt IO_IdentiferListTail | ε
+
+            PushProduction("IO_IdentiferListTail");
+
+            if (CurrentToken.Type == TokenType.Comma)
+            {
+                MatchAndSetToken(TokenType.Comma);
+                MatchAndSetToken(TokenType.Identifier);
+                IO_IdentiferListTail();
+            }
+
+            PopProduction();
+        }
+
+        private void OutStatement()
+        {
+            //OutStatement -> write(WriteList) | writeln(WriteList)
+
+            PushProduction("OutStatement");
+
+            var identifier = CurrentToken.Lexeme;
+            if (identifier != WRITE || identifier != WRITE_LN)
+            {
+                throw new MissingTokenException($"{WRITE}|{WRITE_LN}", identifier, "OutStatement");
+            }
+
+            MatchAndSetToken(TokenType.Identifier);
+            MatchAndSetToken(TokenType.OpenParen);
+            WriteList();
+            MatchAndSetToken(TokenType.CloseParen);
+
+            PopProduction();
+        }
+
+        private void WriteList()
+        {
+            //WriteList -> WriteToken WriteListTail
+            PushProduction("WriteList");
+
+            WriteToken();
+            WriteListTail();
+
+            PopProduction();
+        }
+
+        private void WriteListTail()
+        {
+            //WriteListTail ->  , WriteToken WriteListTail | ε
+
+            PushProduction("WriteListTail");
+
+            if (CurrentToken.Type == TokenType.Comma)
+            {
+                MatchAndSetToken(TokenType.Comma);
+                WriteToken();
+                WriteListTail();
+            }
+
+            PopProduction();
+        }
+
+        private void WriteToken()
+        {
+            //WriteToken -> idt | numt | literal
+
+            PushProduction("WriteToken");
+
+            SetTokenIfAnyMatch(
+                TokenType.Identifier, 
+                TokenType.LiteralBoolean, 
+                TokenType.LiteralInteger, 
+                TokenType.LiteralReal, 
+                TokenType.LiteralString);
+
             PopProduction();
         }
 
