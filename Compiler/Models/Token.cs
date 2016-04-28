@@ -217,5 +217,22 @@ namespace Compiler.Models
                 LineNumber = lineNumber
             };
         }
+
+        /// <summary>
+        /// Creates a token acting as a temporary.
+        /// </summary>
+        /// <param name="tempName">Name of the temporary.</param>
+        /// <param name="lineNumber">The line number.</param>
+        /// <param name="tokenType">Type of the token.</param>
+        /// <returns></returns>
+        public static Token CreateTemporaryToken(string tempName, int lineNumber, TokenType tokenType = TokenType.Identifier)
+        {
+            return new Token
+            {
+                Type = tokenType,
+                Lexeme = tempName,
+                LineNumber = lineNumber
+            };
+        }
     }
 }
