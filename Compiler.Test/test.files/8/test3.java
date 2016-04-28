@@ -17,7 +17,7 @@ class classone{
     b=10;
     d=20;
     classone.secondclass(b,d,a);
-    return;
+    return 2;
   }
 }
 final class Main{

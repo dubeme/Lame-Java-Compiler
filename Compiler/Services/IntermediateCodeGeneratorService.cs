@@ -197,6 +197,8 @@ namespace Compiler.Services
                 ShuntYardToPostFix(_Tokens);
                 var res = ParsePostfixStack();
 
+                // Last item holds result
+                // it always result in VAR = VAR
                 res.Last()[NAME] = RETURN_REGISTER;
 
                 foreach (var item in _VariableLocations)
@@ -284,10 +286,17 @@ namespace Compiler.Services
 
                 ShuntYardToPostFix(_Tokens.Skip(2));
 
-                var result = SimplifyExpressionList(ParsePostfixStack());
+                var parsedPostfixStack = ParsePostfixStack();
+                var result = SimplifyExpressionList(parsedPostfixStack);
+
+                // The last item on the list will contain the result
+                // Hence why the assignment to the entry
+                // LEFT_HAND_VARIABLE = LAST_ITEM_ON_LIST
+                // parsedPostfixStack can't be empty since the assumption is 
+                // that a proper assignment expression is provided
                 var entry = CreateEntry(
                     name: variableToken.Lexeme,
-                    operand1: result.Last()[NAME]);
+                    operand1: parsedPostfixStack.Last()[NAME]);
 
                 result.Add(entry);
 

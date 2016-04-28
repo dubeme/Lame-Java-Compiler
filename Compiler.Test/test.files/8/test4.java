@@ -14,7 +14,7 @@ class classone{
     b=5;
     a=classone.secondclass(b);
     writeln(a);
-    return;
+    return 5;
   }
 }
 final class Main{
