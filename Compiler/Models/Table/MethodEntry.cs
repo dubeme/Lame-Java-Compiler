@@ -34,6 +34,11 @@ namespace Compiler.Models.Table
         public LinkedListNode<KeyValuePair<string, VariableType>> Parameters { get; set; }
 
         /// <summary>
+        /// Tracks the size in bytes of the parameters of this method
+        /// </summary>
+        public int ParameterSize { get; internal set; }
+
+        /// <summary>
         /// Prints the content using the specified printer.
         /// </summary>
         /// <param name="lexeme">The lexeme.</param>
