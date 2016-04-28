@@ -42,7 +42,7 @@ namespace Compiler.Services
                     syntaxParser.MethodLocalSize,
                     syntaxParser.MethodParamSize,
                     (str) => {
-
+                        Console.WriteLine(str);
                     });
 
             }
