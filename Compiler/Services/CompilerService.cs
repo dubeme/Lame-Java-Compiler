@@ -46,6 +46,11 @@ namespace Compiler.Services
                     syntaxParser.MethodLocalSize,
                     syntaxParser.MethodParamSize,
                     (str) => {
+                        if (File.Exists(asmFilePath))
+                        {
+                            File.Delete(asmFilePath);
+                        }
+
                         File.AppendAllText(asmFilePath, str);
                         Console.WriteLine(str);
                     });
