@@ -45,6 +45,8 @@ namespace Compiler.Services
             }
         }
 
+        public Dictionary<string, string> GlobalStrings { get; set; }
+
         private int Depth;
         private int Offset;
         private MethodEntry CurrentMethod;
@@ -65,6 +67,7 @@ namespace Compiler.Services
         {
             this.LexicalAnalyzer = lexAnalyzer;
             this.SymbolTable = symbolTable;
+            this.GlobalStrings = new Dictionary<string, string>();
         }
 
         public void Parse()
@@ -766,16 +769,35 @@ namespace Compiler.Services
             //WriteToken -> idt | numt | literal
 
             PushProduction("WriteToken");
-            
-            ExpressionExpander.Push(CurrentToken);
+
+            var token = CurrentToken;
+
+            if (token.Type == TokenType.LiteralString)
+            {
+                var tempName = InsertGlobalString(token.Lexeme);
+                token = Token.CreateTemporaryToken(tempName, token.LineNumber);
+            }
+
+            ExpressionExpander.Push(token);
+
             SetTokenIfAnyMatch(
-                TokenType.Identifier, 
-                TokenType.LiteralBoolean, 
-                TokenType.LiteralInteger, 
-                TokenType.LiteralReal, 
+                TokenType.Identifier,
+                TokenType.LiteralBoolean,
+                TokenType.LiteralInteger,
+                TokenType.LiteralReal,
                 TokenType.LiteralString);
 
             PopProduction();
+        }
+
+        private string InsertGlobalString(string stringLiteral)
+        {
+            var globalName = $"_S{GlobalStrings.Count}";
+
+            GlobalStrings.Add(globalName, stringLiteral);
+            VariableLocation.Add(globalName, globalName);
+
+            return globalName;
         }
 
         private void Expression()
