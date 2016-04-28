@@ -14,9 +14,13 @@ namespace Compiler.Services
 
         public void Compile(string fileName)
         {
+            var parent = Directory.GetParent(fileName);
+            var dir = Directory.CreateDirectory($"output_{parent.Name}");
+
             var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
-            var tacFilePath = $"{fileNameWithoutExtension}.tac";
-            var asmFilePath = $"{fileNameWithoutExtension}.asm";
+
+            var tacFilePath = $"{dir.FullName}/{fileNameWithoutExtension}.tac";
+            var asmFilePath = $"{dir.FullName}/{fileNameWithoutExtension}.asm";
             try
             {
                 FileIn = File.CreateText(tacFilePath);
@@ -42,6 +46,7 @@ namespace Compiler.Services
                     syntaxParser.MethodLocalSize,
                     syntaxParser.MethodParamSize,
                     (str) => {
+                        File.AppendAllText(asmFilePath, str);
                         Console.WriteLine(str);
                     });
 
