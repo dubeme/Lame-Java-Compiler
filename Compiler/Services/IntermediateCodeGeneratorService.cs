@@ -3,11 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Compiler.Services
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public class IntermediateCodeGeneratorService
     {
@@ -15,26 +16,32 @@ namespace Compiler.Services
         /// The name
         /// </summary>
         private const int NAME = 0;
+
         /// <summary>
         /// The operan d1
         /// </summary>
         private const int OPERAND1 = 1;
+
         /// <summary>
         /// The operator
         /// </summary>
         private const int OPERATOR = 2;
+
         /// <summary>
         /// The operan d2
         /// </summary>
         private const int OPERAND2 = 3;
+
         /// <summary>
         /// The negat e_ operan d1
         /// </summary>
         private const int NEGATE_OPERAND1 = 4;
+
         /// <summary>
         /// The negat e_ operan d2
         /// </summary>
         private const int NEGATE_OPERAND2 = 5;
+
         /// <summary>
         /// The size
         /// </summary>
@@ -44,18 +51,22 @@ namespace Compiler.Services
         /// The invali d_ mode
         /// </summary>
         private const int INVALID_MODE = -1;
+
         /// <summary>
         /// The retur n_ expression
         /// </summary>
         public const int RETURN_EXPRESSION = 0;
+
         /// <summary>
         /// The assignment
         /// </summary>
         public const int ASSIGNMENT = 1;
+
         /// <summary>
         /// The assignmen t_ vi a_ metho d_ call
         /// </summary>
         public const int ASSIGNMENT_VIA_METHOD_CALL = 2;
+
         /// <summary>
         /// The metho d_ call
         /// </summary>
@@ -70,14 +81,17 @@ namespace Compiler.Services
         /// The _ tokens
         /// </summary>
         private List<Token> _Tokens = new List<Token>();
+
         /// <summary>
         /// The _ postfix stack
         /// </summary>
         private Stack<Token> _PostfixStack = new Stack<Token>();
+
         /// <summary>
         /// The _ operators
         /// </summary>
         private Stack<Token> _Operators = new Stack<Token>();
+
         /// <summary>
         /// The _ variable locations
         /// </summary>
@@ -92,24 +106,34 @@ namespace Compiler.Services
         /// The _ variable name count
         /// </summary>
         private int _VariableNameCount = 0;
+
         /// <summary>
         /// The _ bp offset
         /// </summary>
         private int _BPOffset = 0;
 
+        private const string READ = "read";
+        private const string WRITE = "write";
+        private const string WRITE_LN = "writeln";
+        private const string WRITE_INT = "writeint";
+        private const string WRITE_STR = "writestr";
+        private const string READ_INT = "readint";
 
         /// <summary>
         /// The prefix
         /// </summary>
         private static string PREFIX = "_";
+
         /// <summary>
         /// The generate d_ nam e_ prefix
         /// </summary>
         private static string GENERATED_NAME_PREFIX = $"{PREFIX}t";
+
         /// <summary>
         /// The retur n_ register
         /// </summary>
         public readonly static string RETURN_REGISTER = $"{PREFIX}AX";
+
         /// <summary>
         /// The b p_ register
         /// </summary>
@@ -181,8 +205,8 @@ namespace Compiler.Services
         /// <exception cref="System.Exception"></exception>
         private string Evaluate(Dictionary<string, string> variableLocations)
         {
-            Func<string, string> getStackAddress = (string variableName) => {
-
+            Func<string, string> getStackAddress = (string variableName) =>
+            {
                 if (variableLocations.ContainsKey(variableName))
                 {
                     return variableLocations[variableName];
@@ -191,6 +215,11 @@ namespace Compiler.Services
                 throw new Exception($"{variableName} isn't allocated on the stack");
             };
 
+            Func<string, string> GetBPOffset = (str) =>
+            {
+                var bpOffset = Regex.Replace(getStackAddress(str), $"^({BP_REGISTER})", "");
+                return $"[BP{bpOffset}]";
+            };
 
             if (Mode == RETURN_EXPRESSION)
             {
@@ -260,24 +289,55 @@ namespace Compiler.Services
             else if (Mode == IO_METHOD_CALL)
             {
                 var methodToken = _Tokens[0];
-                var parameters = _Tokens.Skip(1).Reverse();
-                var str = new StringBuilder();
+                var parameter = _Tokens[1];
+                var output = new StringBuilder();
 
-                foreach (var parameter in parameters)
+                if (parameter.Type == TokenType.LiteralString)
                 {
-                    if (parameter.Type == TokenType.Identifier)
+                    if (methodToken.Lexeme == READ)
                     {
-                        str.AppendLine($"push {getStackAddress(parameter.Lexeme)}");
+                        // Not supported yet: Read string
+                        // str.Append($"call {methodToken.Lexeme}");
                     }
                     else
                     {
-                        str.AppendLine($"push {parameter.Lexeme}");
+                        output.AppendLine($"mov DX, offset {GetBPOffset(parameter.Lexeme)}");
+
+                        if (methodToken.Lexeme == WRITE)
+                        {
+                            output.Append($"call {WRITE_STR}");
+                        }
+                        else
+                        {
+                            output.AppendLine($"call {WRITE_STR}");
+                            output.Append($"call {WRITE_LN}");
+                        }
+                    }
+                }
+                else
+                {
+                    if (methodToken.Lexeme == READ)
+                    {
+                        output.Append($"call {READ_INT}");
+                        output.AppendLine($"mov {GetBPOffset(parameter.Lexeme)}, BX");
+                    }
+                    else
+                    {
+                        output.AppendLine($"mov BX, {GetBPOffset(parameter.Lexeme)}");
+
+                        if (methodToken.Lexeme == WRITE)
+                        {
+                            output.Append($"call {WRITE_INT}");
+                        }
+                        else
+                        {
+                            output.AppendLine($"call {WRITE_INT}");
+                            output.Append($"call {WRITE_LN}");
+                        }
                     }
                 }
 
-                str.Append($"call {methodToken.Lexeme}");
-
-                return str.ToString();
+                return output.ToString();
             }
             else if (Mode == ASSIGNMENT)
             {
@@ -292,7 +352,7 @@ namespace Compiler.Services
                 // The last item on the list will contain the result
                 // Hence why the assignment to the entry
                 // LEFT_HAND_VARIABLE = LAST_ITEM_ON_LIST
-                // parsedPostfixStack can't be empty since the assumption is 
+                // parsedPostfixStack can't be empty since the assumption is
                 // that a proper assignment expression is provided
                 var entry = CreateEntry(
                     name: variableToken.Lexeme,
@@ -526,10 +586,10 @@ namespace Compiler.Services
                 // Add visual indicator for negation
                 if (item[NEGATE_OPERAND1] != null && (bool)item[NEGATE_OPERAND1])
                 {
-                    operandStr = $"{"-" + operandStr ,15 }";
+                    operandStr = $"{"-" + operandStr,15 }";
                 }
 
-                str = $"{str}{operandStr, 15}";
+                str = $"{str}{operandStr,15}";
 
                 if (item[OPERATOR] != null)
                 {

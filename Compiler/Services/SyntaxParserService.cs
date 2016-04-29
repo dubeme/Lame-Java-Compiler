@@ -784,7 +784,7 @@ namespace Compiler.Services
             if (token.Type == TokenType.LiteralString)
             {
                 var tempName = InsertGlobalString(token.Lexeme);
-                token = Token.CreateTemporaryToken(tempName, token.LineNumber);
+                token = Token.CreateTemporaryToken(tempName, token.LineNumber, TokenType.LiteralString);
             }
 
             ExpressionExpander.Push(token);

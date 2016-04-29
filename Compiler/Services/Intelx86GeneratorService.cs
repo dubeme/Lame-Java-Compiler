@@ -16,6 +16,8 @@ namespace Compiler.Services
         private const string MAIN = "main";
         private static int OPERATION = 5;
         private static int JUST_ASSIGNMENT = 3;
+        private const string COMMENT = ";";
+        private static string MOV = "mov";
 
         public static void Generate(
             string[] tacCodeLines,
@@ -53,6 +55,8 @@ namespace Compiler.Services
 
             printer($@"{"",TAB_INDENT}.code");
             printer($@"{"",TAB_INDENT}include io.asm");
+
+            PrintNewLine(printer);
         }
 
         private static void ThreeAdressCodeTox86(
@@ -82,15 +86,15 @@ namespace Compiler.Services
                     if (methodName == MAIN)
                     {
                         printer($@"{"start",TAB_INDENT}proc");
-                        printer($@"{"",TAB_INDENT}mov ax, @data");
-                        printer($@"{"",TAB_INDENT}mov bs, ax");
+                        printer($@"{"",TAB_INDENT}mov AX, @data");
+                        printer($@"{"",TAB_INDENT}mov DS, AX");
                     }
                     else
                     {
                         printer($@"{methodName,TAB_INDENT}proc");
-                        printer($@"{"",TAB_INDENT}push bp");
-                        printer($@"{"",TAB_INDENT}mov bp, sp");
-                        printer($@"{"",TAB_INDENT}sub sp, {methodLocalBytes[methodName]}");
+                        printer($@"{"",TAB_INDENT}push BP");
+                        printer($@"{"",TAB_INDENT}mov BP, SP");
+                        printer($@"{"",TAB_INDENT}sub SP, {methodLocalBytes[methodName]}");
                     }
                     PrintNewLine(printer);
                 }
@@ -100,15 +104,15 @@ namespace Compiler.Services
 
                     if (methodName == MAIN)
                     {
-                        printer($@"{"",TAB_INDENT}mov ah, 04ch");
+                        printer($@"{"",TAB_INDENT}mov AH, 04ch");
                         printer($@"{"",TAB_INDENT}int 21h");
                         printer($@"{"start",TAB_INDENT}endp");
                         printer($@"{"",TAB_INDENT}end start");
                     }
                     else
                     {
-                        printer($@"{"",TAB_INDENT}add sp, {methodLocalBytes[methodName]}");
-                        printer($@"{"",TAB_INDENT}pop bp");
+                        printer($@"{"",TAB_INDENT}add SP, {methodLocalBytes[methodName]}");
+                        printer($@"{"",TAB_INDENT}pop BP");
 
                         if (methodParameterBytes[methodName] == 0)
                         {
@@ -127,10 +131,32 @@ namespace Compiler.Services
                 else if (temp[0] == CALL)
                 {
                     printer($@"{"",TAB_INDENT}call {temp[1]}");
+                    PrintNewLine(printer);
                 }
                 else if (temp[0] == PUSH)
                 {
-                    printer($@"{"",TAB_INDENT}push {temp[1]}");
+                    if (temp[1].StartsWith(IntermediateCodeGeneratorService.BP_REGISTER))
+                    {
+                        printer($@"{"",TAB_INDENT}push [BP{GetBPOffset(temp[1])}]");
+                    }
+                    else
+                    {
+                        printer($@"{"",TAB_INDENT}push {temp[1]}");
+                    }
+                }
+                else if (temp[0] == MOV)
+                {
+                    //var dst = temp[1];
+                    //var src = temp[2];
+
+                    //if (src.StartsWith(IntermediateCodeGeneratorService.BP_REGISTER))
+                    //{
+                    //    src = $"[BP{GetBPOffset(src)}]";
+                    //}
+
+                    //printer($@"{"",TAB_INDENT}mov {dst}, {src}");
+
+                    printer($@"{"",TAB_INDENT}{line.Trim()}");
                 }
                 else if (temp.Length == JUST_ASSIGNMENT)
                 {
@@ -138,6 +164,7 @@ namespace Compiler.Services
                     var operand1 = temp[2].TrimStart('-');
                     var negateOperand1 = temp[2].StartsWith("-");
 
+                    printer($"{"",TAB_INDENT}{COMMENT}{leftHand} = {operand1}");
                     if (operand1.StartsWith(IntermediateCodeGeneratorService.BP_REGISTER))
                     {
                         printer($@"{"",TAB_INDENT}mov AX, [BP{GetBPOffset(operand1)}]");
@@ -152,7 +179,12 @@ namespace Compiler.Services
                         printer($@"{"",TAB_INDENT}mov AX, {operand1}");
                     }
 
-                    printer($@"{"",TAB_INDENT}mov [BP{GetBPOffset(leftHand)}], AX    #{leftHand} = {operand1}");
+                    if (!leftHand.StartsWith(IntermediateCodeGeneratorService.RETURN_REGISTER))
+                    {
+                        // If not return statement
+                        printer($@"{"",TAB_INDENT}mov [BP{GetBPOffset(leftHand)}], AX");
+                    }
+
                     PrintNewLine(printer);
                 }
                 else if (temp.Length == OPERATION)
@@ -161,6 +193,13 @@ namespace Compiler.Services
                     var oper1 = temp[2];
                     var @operator = temp[3];
                     var oper2 = temp[4];
+
+                    printer($"{"",TAB_INDENT}{COMMENT}{lh} = {oper1} {@operator} {oper2}");
+                    
+                    if (@operator == "/")
+                    {
+                        printer($@"{"",TAB_INDENT}mov DX, 0    ; Clear high dividend");
+                    }
 
                     if (oper1.StartsWith(IntermediateCodeGeneratorService.BP_REGISTER))
                     {
@@ -178,11 +217,13 @@ namespace Compiler.Services
 
                     if (@operator == "*")
                     {
-                        printer($@"{"",TAB_INDENT}mul AX, {oper2}");
+                        printer($@"{"",TAB_INDENT}mov BX, {oper2}");
+                        printer($@"{"",TAB_INDENT}imul BX");
                     }
                     else if (@operator == "/")
                     {
-                        printer($@"{"",TAB_INDENT}div AX, {oper2}");
+                        printer($@"{"",TAB_INDENT}mov BX, {oper2}");
+                        printer($@"{"",TAB_INDENT}idiv BX");
                     }
                     else if (@operator == "+")
                     {
@@ -197,7 +238,12 @@ namespace Compiler.Services
                         throw new Exception($"Invalid operation {@operator}");
                     }
 
-                    printer($@"{"",TAB_INDENT}mov [BP{GetBPOffset(lh)}], AX    #{lh} = {oper1} {@operator} {temp[4]}");
+                    if (!lh.StartsWith(IntermediateCodeGeneratorService.RETURN_REGISTER))
+                    {
+                        // If not return statement
+                        printer($@"{"",TAB_INDENT}mov [BP{GetBPOffset(lh)}], AX");
+                    }
+
                     PrintNewLine(printer);
                 }
                 else
