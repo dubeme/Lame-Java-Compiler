@@ -250,7 +250,7 @@ namespace Compiler.Services
                 {
                     if (parameter.Type == TokenType.Identifier)
                     {
-                        str.AppendLine($"push {getStackAddress(parameter.Lexeme)}");
+                        str.AppendLine($"push {GetBPOffset(parameter.Lexeme)}");
                     }
                     else
                     {
@@ -259,7 +259,7 @@ namespace Compiler.Services
                 }
 
                 str.AppendLine($"call {methodToken.Lexeme}");
-                str.Append($"{getStackAddress(variableToken.Lexeme)} = _AX");
+                str.Append($"{getStackAddress(variableToken.Lexeme)} = AX");
 
                 return str.ToString();
             }
@@ -274,7 +274,7 @@ namespace Compiler.Services
                 {
                     if (parameter.Type == TokenType.Identifier)
                     {
-                        str.AppendLine($"push {getStackAddress(parameter.Lexeme)}");
+                        str.AppendLine($"push {GetBPOffset(parameter.Lexeme)}");
                     }
                     else
                     {
@@ -301,7 +301,8 @@ namespace Compiler.Services
                     }
                     else
                     {
-                        output.AppendLine($"mov DX, offset {GetBPOffset(parameter.Lexeme)}");
+                        // Strings are in the data section
+                        output.AppendLine($"mov DX, offset {getStackAddress(parameter.Lexeme)}");
 
                         if (methodToken.Lexeme == WRITE)
                         {

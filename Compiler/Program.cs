@@ -42,9 +42,9 @@ namespace Compiler
                 {
                     var sourceCode = System.IO.File.ReadAllText(codeFile);
                     CompilerService.CompileFile(codeFile);
-                    Console.WriteLine($"\n\nPlease press enter to continue ... ");
-                    Console.ReadLine();
-                    Console.Clear();
+                    //Console.WriteLine($"\n\nPlease press enter to continue ... ");
+                    //Console.ReadLine();
+                    //Console.Clear();
                 }
             }
 
