@@ -319,8 +319,8 @@ namespace Compiler.Services
                 {
                     if (methodToken.Lexeme == READ)
                     {
-                        output.Append($"call {READ_INT}");
-                        output.AppendLine($"mov {GetBPOffset(parameter.Lexeme)}, BX");
+                        output.AppendLine($"call {READ_INT}");
+                        output.Append($"mov {GetBPOffset(parameter.Lexeme)}, BX");
                     }
                     else
                     {
