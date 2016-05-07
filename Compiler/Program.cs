@@ -7,14 +7,14 @@ namespace Compiler
     {
         public static void Main(string[] args)
         {
-            if (args.Length != 1)
-            {
-                Console.WriteLine("Invalid usage - Usage EXECUTABLE JAVA_FILE");
-                return;
-            }
-
             if (Environment.GetEnvironmentVariable("dumm", EnvironmentVariableTarget.User) == null)
             {
+                if (args.Length != 1)
+                {
+                    Console.WriteLine("Invalid usage - Usage EXECUTABLE JAVA_FILE");
+                    return;
+                }
+
                 var compiler = new CompilerService();
                 compiler.Compile(args[0]);
             }
